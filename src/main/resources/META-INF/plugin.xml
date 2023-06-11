@@ -5,10 +5,10 @@
 
   <!-- Public plugin name should be written in Title Case.
        Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
-  <name>FactorioDebugger</name>
+  <name>Factorio Debugger</name>
 
   <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-  <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">YourCompany</vendor>
+  <vendor>sfyb</vendor>
 
   <version>0.0.1</version>
 
@@ -16,7 +16,19 @@
        Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
        Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
   <description><![CDATA[
-    Adds the ability to debug factorio mods.
+<p>Adds the ability to debug factorio mods. Requires an installation of the npm package
+<code href="https://www.npmjs.com/package/factoriomod-debug">factoriomod-debug</code>
+(also known as FMTK, <b>F</b>actorio <b>M</b>odding <b>T</b>ool<b>K</b>it).
+<ul>
+Features:
+<li>Create a run configuration with a factorio instalation</li>
+<li>Debug a factorio mod:<ul>
+<li>Line breakpoints</li>
+<li>Evaluate code</li>
+<li>Change and inspect variables at runtime</li>
+<li>Inspect stack trace with source mapping support</li>
+</li>
+</p>
   ]]></description>
 
   <!-- Product and plugin compatibility requirements.
