@@ -1,0 +1,5 @@
+<idea-plugin>
+  <extensions defaultExtensionNs="factorio.debugger">
+    <factorioDebugHoverExpression implementation="factorio.debugger.thirdparty.LuaDebugEval"/>
+  </extensions>
+</idea-plugin>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="factorio.debugger.runconfig.FactorioSettingsEditor">
+  <grid id="27dc6" binding="myPanel" layout-manager="GridLayoutManager" row-count="7" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="20" y="20" width="500" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="71523" class="com.intellij.openapi.ui.LabeledComponent" binding="myFactorioGame" custom-create="true">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <labelLocation value="West"/>
+          <text value="Factorio Executeable"/>
+          <toolTipText value="Path to the factorio executeable"/>
+        </properties>
+      </component>
+      <vspacer id="43f4">
+        <constraints>
+          <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
+      <component id="9e1df" class="com.intellij.openapi.ui.LabeledComponent" binding="myFactorioDebugArgs" custom-create="true">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <enabled value="false"/>
+          <labelLocation value="West"/>
+          <text value="Debug Arguments"/>
+          <toolTipText value="Argumetns for fmtk (Factorio modding tool kit)"/>
+          <visible value="false"/>
+        </properties>
+      </component>
+      <component id="b5bac" class="com.intellij.openapi.ui.LabeledComponent" binding="myFMTKPackagePath" custom-create="true">
+        <constraints>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <labelLocation value="West"/>
+          <text value="FMTK package"/>
+        </properties>
+      </component>
+      <component id="86dee" class="com.intellij.openapi.ui.LabeledComponent" binding="myNodeJsInterpreter" custom-create="true">
+        <constraints>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <labelLocation value="West"/>
+          <text value="Node interpreter"/>
+          <toolTipText value="Node interpreter used to run fmtk"/>
+        </properties>
+      </component>
+      <component id="1078e" class="javax.swing.JCheckBox" binding="enableTraceCheckBox" default-binding="true">
+        <constraints>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="Enable trace"/>
+          <toolTipText value="Enables tracing in fmtk for debugging issues within fmtk"/>
+        </properties>
+      </component>
+      <component id="560be" class="com.intellij.openapi.ui.LabeledComponent" binding="myOtherNodeArguments" custom-create="true">
+        <constraints>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <labelLocation value="West"/>
+          <text value="NodeJs Arguments"/>
+          <toolTipText value="Arguments for NodeJs this is for debugging purposes!"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>
