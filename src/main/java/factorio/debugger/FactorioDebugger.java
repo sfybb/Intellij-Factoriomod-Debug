@@ -65,7 +65,9 @@ import factorio.debugger.DAP.messages.response.DAPThreadsResponse;
 import factorio.debugger.DAP.messages.response.DAPVariablesResponse;
 import factorio.debugger.DAP.messages.types.DAPCapabilities;
 import factorio.debugger.DAP.messages.types.DAPCapabilitiesEnum;
+import factorio.debugger.DAP.messages.types.DAPScope;
 import factorio.debugger.DAP.messages.types.DAPSourceBreakpoint;
+import factorio.debugger.DAP.messages.types.DAPStackFrame;
 import factorio.debugger.DAP.messages.types.DAPSteppingGranularity;
 
 public class FactorioDebugger {
@@ -80,6 +82,8 @@ public class FactorioDebugger {
 
     private Map<String, BreakpointsInFile> breakpointsPerFile;
     private boolean batchBreakpointRequests;
+
+    private final boolean linesStartAt1 = true;
 
     public FactorioDebugger(final FactorioDebugProcess factorioDebugProcess) {
         myFactorioDebugProcess = factorioDebugProcess;
@@ -98,7 +102,8 @@ public class FactorioDebugger {
         initializeRequest.arguments.clientName = appinfo.getFullProductName();
         initializeRequest.arguments.adapterID = "factorio-debugger-intellij";
 
-        initializeRequest.arguments.linesStartAt1 = true;
+        // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
+        initializeRequest.arguments.linesStartAt1 = linesStartAt1;
         initializeRequest.arguments.columnsStartAt1 = true;
         initializeRequest.arguments.supportsMemoryEvent = true;
         initializeRequest.arguments.supportsVariableType = true;
@@ -173,7 +178,7 @@ public class FactorioDebugger {
     public Promise<DAPSourceBreakpoint> addBreakpoint(@NotNull final XSourcePosition position, @Nullable final XLineBreakpoint<?> breakpoint) {
         String filePath = position.getFile().getPath();
         if(!this.breakpointsPerFile.containsKey(filePath)) {
-            this.breakpointsPerFile.put(filePath, new BreakpointsInFile());
+            this.breakpointsPerFile.put(filePath, new BreakpointsInFile(linesStartAt1));
         }
         BreakpointsInFile bpInFile = this.breakpointsPerFile.get(filePath);
 
@@ -202,7 +207,7 @@ public class FactorioDebugger {
     public void removeBreakpoint(@NotNull final XSourcePosition position, @Nullable final XLineBreakpoint<?> breakpoint) {
         String filePath = position.getFile().getPath();
         if(!this.breakpointsPerFile.containsKey(filePath)) {
-            this.breakpointsPerFile.put(filePath, new BreakpointsInFile());
+            this.breakpointsPerFile.put(filePath, new BreakpointsInFile(linesStartAt1));
         }
         BreakpointsInFile bpInFile = this.breakpointsPerFile.get(filePath);
         bpInFile.remove(position);
@@ -237,11 +242,36 @@ public class FactorioDebugger {
         DAPStackTraceRequest stackTraceRequest = new DAPStackTraceRequest(threadId);
         // TODO maybe only 20
         stackTraceRequest.arguments.levels = Integer.MAX_VALUE;
-        return asyncRequest(stackTraceRequest);
+        return asyncRequest(stackTraceRequest).then(resp -> {
+            DAPStackTraceResponse stackTrace = (DAPStackTraceResponse) resp;
+
+            if (stackTrace != null && stackTrace.body != null && stackTrace.body.stackFrames != null) {
+                for (final DAPStackFrame stackFrame : stackTrace.body.stackFrames) {
+                    // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize
+                    // request)
+                    if (stackFrame.line != null) {
+                        stackFrame.line -= linesStartAt1 ? 1 : 0;
+                    }
+                }
+            }
+            return stackTrace;
+        });
     }
 
     public Promise<DAPScopesResponse> getScope(final int frameId) {
-        return this.asyncRequest(new DAPScopesRequest(frameId));
+        return this.asyncRequest(new DAPScopesRequest(frameId)).then(resp -> {
+            DAPScopesResponse scope = (DAPScopesResponse) resp;
+            if (scope != null && scope.body != null && scope.body.scopes != null) {
+                for (final DAPScope dapScope : scope.body.scopes) {
+                    // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize
+                    // request)
+                    if (dapScope.line != null) {
+                        dapScope.line -= linesStartAt1 ? 1 : 0;
+                    }
+                }
+            }
+            return scope;
+        });
     }
 
     public Promise<DAPVariablesResponse> getVariable(int varRef, final int offset, final int maxResults) {
@@ -283,6 +313,8 @@ public class FactorioDebugger {
     }
 
     public Promise<DAPBreakpointLocationsResponse> getBreakpointLocations() {
+        // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
+
         DAPBreakpointLocationsRequest request = new DAPBreakpointLocationsRequest();
         request.arguments.source.path = "/DataSSD/Games/factorio_80/mods/factorio-codex/build/Migration.lua";
         request.arguments.line = 1;
@@ -343,6 +375,12 @@ public class FactorioDebugger {
         private VirtualFile myFile;
         private final List<Pair<Integer, AsyncPromise<DAPSourceBreakpoint>>> positions = new ArrayList<>();
 
+        private final boolean linesStartAt1;
+
+        BreakpointsInFile(boolean linesStartAt1) {
+            this.linesStartAt1 = linesStartAt1;
+        }
+
         public Promise<DAPSourceBreakpoint> add(@NotNull XSourcePosition position) {
             if(myFile == null) {
                 myFile = position.getFile();
@@ -383,7 +421,8 @@ public class FactorioDebugger {
 
         public DAPSetBreakpointsRequest getSetBreakpointRequest() {
             if(myFile != null) {
-                List<Integer> linePositions = positions.stream().map(pair -> pair.first).collect(Collectors.toList());
+                // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
+                List<Integer> linePositions = positions.stream().map(pair -> pair.first + (linesStartAt1 ? 1 : 0)).collect(Collectors.toList());
                 return new DAPSetBreakpointsRequest(myFile, linePositions);
             }
             return null;
@@ -393,6 +432,8 @@ public class FactorioDebugger {
             if(resp != null && resp.body != null) {
                 for (int i = 0; i < resp.body.breakpoints.length; i++) {
                     DAPSourceBreakpoint breakpoint = resp.body.breakpoints[i];
+                    // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
+                    breakpoint.line -= linesStartAt1 ? 1 : 0;
 
                     AsyncPromise<DAPSourceBreakpoint> prom = findPromiseByBreakpoint(breakpoint);
                     if(prom != null) prom.setResult(breakpoint);

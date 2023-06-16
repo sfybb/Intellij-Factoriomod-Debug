@@ -104,7 +104,7 @@ public class FactorioDebugProcess extends XDebugProcess {
         this.myEditorsProvider = new FactorioDebuggerEditorsProvider();
         this.myExecutionConsole = executionConsole;
         this.idToBreakpointMap = new HashMap<>();
-        this.myPositionConverter = new FactorioLocalPositionConverter();
+        this.myPositionConverter = new FactorioLocalPositionConverter(session.getProject());
         this.mySmartStepIntoHandler = new FactorioSmartStepIntoHandler(this);
         session.setPauseActionSupported(true);
 
@@ -146,7 +146,7 @@ public class FactorioDebugProcess extends XDebugProcess {
             }
         });
         this.myDebugger.setEventHandler(DAPEventNames.OUTPUT, this::debugeeOutput);
-        this.myDebugger.setEventHandler(DAPEventNames.MODULE, event -> this.myPositionConverter.addModule((DAPModuleEvent)event));
+        this.myDebugger.setEventHandler(DAPEventNames.MODULE, event -> this.myPositionConverter.addModule((DAPModuleEvent)event, factorioGameRuntimeEnv));
         this.myDebugger.setEventHandler(DAPEventNames.INITIALIZED , init_msg -> {
             FactorioDebugProcess.this.initialize(FactorioDebugProcess.this.myDebugger.getCapabilities(), init_msg.sequence);
         });
@@ -325,7 +325,7 @@ public class FactorioDebugProcess extends XDebugProcess {
                     else session.positionReached(suspendCtx);
                 });
         }).onError(err -> {
-            logger.warn(String.format("Unable to stop because suspend context creation failed with: %s", err));
+            logger.warn("Unable to stop because suspend context creation failed with", err);
             FactorioDebugProcess.this.resume(null);
         });
     }
@@ -506,10 +506,8 @@ public class FactorioDebugProcess extends XDebugProcess {
         }
     }
 
-    public XSourcePosition getSourcePosition(final FactorioSourcePosition position) {
-        if (position == null || position.getFile() == null) return null;
-
-        return this.myPositionConverter.convertFromFactorio(position, this.getFactorioBaseDir());
+    public @NotNull FactorioSourcePosition getSourcePosition(final @Nullable String path, int line) {
+        return this.myPositionConverter.getFactorioSourcePosition(path, line);
     }
 
     public Promise<DAPScopesResponse> getScope(final int frameId) {

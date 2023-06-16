@@ -210,7 +210,13 @@ public class DAPSocket implements ProcessListener {
 
         if (eventNames != null) {
             Consumer<DAPEvent> consumer = eventHandlers.get(eventNames);
-            if (consumer != null) consumer.accept(event);
+            if (consumer != null) {
+                try {
+                    consumer.accept(event);
+                } catch (Throwable e) {
+                    logger.error("Encountered exception while processing event "+event, e);
+                }
+            }
             else logger.info("Received unhandled "+event);
         }
         synchronized (myActiveEvents) {

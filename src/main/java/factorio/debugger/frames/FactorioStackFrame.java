@@ -18,27 +18,23 @@ import factorio.debugger.FactorioDebugProcess;
 import factorio.debugger.FactorioDebuggerEvaluator;
 
 public class FactorioStackFrame extends XStackFrame {
-    private XSourcePosition sourcePosition;
-    private final DAPStackFrame stackFrame;
-    private @NotNull final FactorioExecutionStack myExecutionStack;
-    private @NotNull final FactorioDebugProcess myDebugProcess;
-    private @NotNull final FactorioDebuggerEvaluator myEvaluator;
+    private final @NotNull FactorioSourcePosition sourcePosition;
+    private final @NotNull DAPStackFrame myStackFrame;
+    private final @NotNull FactorioExecutionStack myExecutionStack;
+    private final @NotNull FactorioDebugProcess myDebugProcess;
+    private final @NotNull FactorioDebuggerEvaluator myEvaluator;
     private final int myStackFrameId;
     public FactorioStackFrame(@NotNull final FactorioDebugProcess debugProcess,
                               @NotNull final FactorioExecutionStack executionStack,
                               @NotNull final DAPStackFrame stackFrame) {
-        this.stackFrame = stackFrame;
+        this.myStackFrame = stackFrame;
         this.myExecutionStack = executionStack;
         this.myDebugProcess = debugProcess;
         this.myStackFrameId = stackFrame.id;
         this.myEvaluator = new FactorioDebuggerEvaluator(debugProcess, executionStack, myStackFrameId);
 
         String path = stackFrame.source != null ? stackFrame.source.path : null;
-        sourcePosition = myDebugProcess.getSourcePosition(
-            new FactorioSourcePosition(
-                path,
-                stackFrame.line
-            ));
+        sourcePosition = myDebugProcess.getSourcePosition(path, myStackFrame.line);
     }
 
     public int getStackFrameId() {
@@ -53,36 +49,42 @@ public class FactorioStackFrame extends XStackFrame {
     @Nullable
     @Override
     public XSourcePosition getSourcePosition() {
-        return sourcePosition;
+        return sourcePosition.getSourcePosition();
     }
 
     @Override
     public void customizePresentation(@NotNull final ColoredTextContainer component) {
-        if (this.stackFrame.name != null && this.sourcePosition != null) {
-            component.append(this.stackFrame.name, SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.append(":" + (this.sourcePosition.getLine() + 1), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.append(", " + this.sourcePosition.getFile().getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.append(" (" + this.sourcePosition.getFile().getPath() + ")", SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        component.setIcon(AllIcons.Debugger.Frame);
+        if (this.sourcePosition.getSourcePosition() != null) {
+            if (this.myStackFrame.name != null) {
+                component.append(this.myStackFrame.name, SimpleTextAttributes.REGULAR_ATTRIBUTES);
+                component.append(":" + (this.sourcePosition.getSourceLine() + 1), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+                component.append(" " + this.sourcePosition.getPresentablePath(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+            } else {
+                component.append(this.sourcePosition.getPresentablePath(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+                component.append(":" + (this.sourcePosition.getLine() + 1), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+                component.setIcon(AllIcons.Debugger.Frame);
+            }
+        } else if (myStackFrame.source != null ) {
+            component.append(myStackFrame.name, SimpleTextAttributes.REGULAR_ATTRIBUTES);
+            component.append(":" + (myStackFrame.line), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+            component.append(" " + this.sourcePosition.getPresentablePath(), SimpleTextAttributes.GRAY_ATTRIBUTES);
             component.setIcon(AllIcons.Debugger.Frame);
-        } else if (this.sourcePosition != null && this.sourcePosition.getFile().exists()) {
-            component.append(this.sourcePosition.getFile().getPath(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.append(":" + (this.sourcePosition.getLine() + 1), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.setIcon(AllIcons.Debugger.Frame);
-        } else if (stackFrame.source != null ) {
-            component.append(stackFrame.source.name, SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.append(":" + (stackFrame.line), SimpleTextAttributes.REGULAR_ATTRIBUTES);
-            component.setIcon(AllIcons.Debugger.Frame);
-        } else if (stackFrame.name != null) {
-            component.append(stackFrame.name, SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        } else if (myStackFrame.name != null) {
+            component.append(myStackFrame.name, SimpleTextAttributes.REGULAR_ATTRIBUTES);
             component.setIcon(AllIcons.Debugger.Frame);
         } else {
             component.append(ColoredText.singleFragment(XDebuggerBundle.message("message.frame.is.not.available")));
         }
+
+        /*if ( this.myStackFrame.source != null) {
+            component.append("  " + this.myStackFrame.source.name + ":" + this.myStackFrame.line, SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        }*/
     }
 
     @Override
     public void computeChildren(@NotNull final XCompositeNode node) {
-        this.myExecutionStack.getScope(stackFrame.id).onProcessed(scopesResponse -> {
+        this.myExecutionStack.getScope(myStackFrame.id).onProcessed(scopesResponse -> {
             DAPScope[] scopes = scopesResponse.body.scopes;
 
             if (scopes == null || scopes.length == 0) {

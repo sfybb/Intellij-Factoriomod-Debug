@@ -62,4 +62,8 @@ public class FactorioGameRuntimeEnvironment implements FactorioRuntimeEnvironmen
     public String getBasePath() {
         return myHomePath;
     }
+
+    public String getModFolder() {
+        return Path.of(myHomePath, "mods").toString();
+    }
 }
