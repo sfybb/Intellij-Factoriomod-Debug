@@ -39,7 +39,7 @@ public class FactorioDebuggerEditorsProvider extends XDebuggerEditorsProvider {
         text = text.trim();
         PsiPlainTextFile fragment = new PsiPlainTextFileImpl(
             PsiManagerEx.getInstanceEx(project).getFileManager().createFileViewProvider(
-                new LightVirtualFile("factorioFragment.txt", FileTypeRegistry.getInstance().getFileTypeByExtension("txt"), text),
+                new LightVirtualFile("factorioFragment.lua", FileTypeRegistry.getInstance().getFileTypeByExtension("Lua"), text),
                 true
         ));
         return Objects.requireNonNull(PsiDocumentManager.getInstance(project).getDocument(fragment));
