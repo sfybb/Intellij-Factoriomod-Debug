@@ -1,6 +1,7 @@
 package factorio.debugger.game;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -8,8 +9,6 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.google.common.collect.ImmutableList;
-import com.intellij.javascript.nodejs.CompletionModuleInfo;
-import com.intellij.javascript.nodejs.NodeModuleSearchUtil;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -115,7 +114,7 @@ public class FactorioServiceManager implements PersistentStateComponent<Element>
     }
 
     protected @NotNull Set<String> getFMTKDetectedExecutablePaths() {
-        Set<String> results = new HashSet<>();
+        /*Set<String> results = new HashSet<>();
 
         List<CompletionModuleInfo> globalModules = new ArrayList<>();
         NodeModuleSearchUtil.findGloballyInstalledModules(globalModules, FMTK_ID, null);
@@ -125,8 +124,8 @@ public class FactorioServiceManager implements PersistentStateComponent<Element>
             if(modPath != null && FMTKUtil.checkForFMTK(modPath)) {
                 results.add(modPath);
             }
-        }
+        }*/
 
-        return results;
+        return Collections.emptySet();
     }
 }

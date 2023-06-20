@@ -1,13 +1,20 @@
 package factorio.debugger.runconfig;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterField;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef;
+import org.jetbrains.annotations.Nullable;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.LabeledComponent;
+import com.intellij.openapi.ui.TextBrowseFolderListener;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.vfs.VFileProperty;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.TextFieldWithAutoCompletion;
 import factorio.debugger.game.FactorioFMTKRuntimeEnvironmentType;
 import factorio.debugger.game.FactorioGameRuntimeEnvironmentType;
@@ -20,7 +27,7 @@ public class FactorioSettingsEditor extends SettingsEditor<FactorioRunConfigurat
     private LabeledComponent<RuntimeEnvironmentField> myFMTKPackagePath;
 
     private LabeledComponent<RuntimeEnvironmentField> myFactorioGame;
-    private LabeledComponent<NodeJsInterpreterField> myNodeJsInterpreter;
+    private LabeledComponent<TextFieldWithBrowseButton> myNodeJsInterpreter;
     private JCheckBox enableTraceCheckBox;
     private LabeledComponent<JTextField> myOtherNodeArguments;
     private final Project myProject;
@@ -35,7 +42,7 @@ public class FactorioSettingsEditor extends SettingsEditor<FactorioRunConfigurat
 
         myFactorioGame.getComponent().setRuntimeRef(new FactorioRuntimeEnvironmentRef(opt.getFactorioRuntimeRef()));
         myFMTKPackagePath.getComponent().setRuntimeRef(new FactorioRuntimeEnvironmentRef(opt.getFMTKPackage()));
-        myNodeJsInterpreter.getComponent().setInterpreterRef(NodeJsInterpreterRef.create(opt.getNodeJsInterpreterRef()));
+        myNodeJsInterpreter.getComponent().setText(opt.getNodeJsInterpreterRef());
         enableTraceCheckBox.setSelected(opt.getTrace());
         myOtherNodeArguments.getComponent().setText(opt.getDebugNodeArgs());
 
@@ -46,7 +53,7 @@ public class FactorioSettingsEditor extends SettingsEditor<FactorioRunConfigurat
         FactorioRunConfigurationOptions opt = s.getOptions();
         opt.setFactorioRuntimeRef(myFactorioGame.getComponent().getRuntimeRef().getReferenceName());
         opt.setFMTKPackage(myFMTKPackagePath.getComponent().getRuntimeRef().getReferenceName());
-        opt.setNodeJsInterpreterRef(myNodeJsInterpreter.getComponent().getInterpreterRef().getReferenceName());
+        opt.setNodeJsInterpreterRef(myNodeJsInterpreter.getComponent().getText());
         opt.setTrace(enableTraceCheckBox.isSelected());
         opt.setDebugNodeArgs(myOtherNodeArguments.getComponent().getText());
     }
@@ -66,7 +73,24 @@ public class FactorioSettingsEditor extends SettingsEditor<FactorioRunConfigurat
         myFMTKPackagePath.setComponent(new RuntimeEnvironmentField(FactorioFMTKRuntimeEnvironmentType.getInstance()));
 
         myNodeJsInterpreter = new LabeledComponent<>();
-        myNodeJsInterpreter.setComponent(new NodeJsInterpreterField(myProject));
+        myNodeJsInterpreter.setComponent(new TextFieldWithBrowseButton());
+        myNodeJsInterpreter.getComponent().addBrowseFolderListener(new TextBrowseFolderListener(new FileChooserDescriptor(true, false, false,
+            false, false, false) {
+            @Override
+            public boolean isFileVisible(final VirtualFile file, final boolean showHiddenFiles) {
+                return (!file.is(VFileProperty.HIDDEN) || showHiddenFiles) && (file.isDirectory() || isFileSelectable(file));
+            }
+
+            @Override
+            public boolean isFileSelectable(@Nullable final VirtualFile file) {
+                if (!super.isFileSelectable(file) || !file.isInLocalFileSystem())
+                    return false;
+
+                return (!SystemInfo.isWindows || ("exe".equals(file.getExtension()) && file.exists() && !file.isDirectory())) &&
+                       (!SystemInfo.isMac || ("app".equals(file.getExtension()) && file.isDirectory())) &&
+                       (!SystemInfo.isLinux || Files.isExecutable(Paths.get(file.getPath())));
+            }
+        }));
 
         myFactorioGame = new LabeledComponent<>();
         myFactorioGame.setComponent(new RuntimeEnvironmentField(FactorioGameRuntimeEnvironmentType.getInstance()));

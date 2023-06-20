@@ -9,7 +9,6 @@ import javax.swing.*;
 import javax.swing.event.PopupMenuEvent;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.ide.DataManager;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRenderer;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
@@ -211,7 +210,7 @@ public class RuntimeEnvironmentField extends ComponentWithBrowseButton<ComboBox<
     private static class AddRuntimeRenderer extends ColoredListCellRenderer<FactorioRuntimeEnvironmentRef> {
         AddRuntimeRenderer() {
             this.setIpad(JBUI.insetsLeft(2));
-            NodeJsInterpreterRenderer.adjustBorderHeight(this);
+            //NodeJsInterpreterRenderer.adjustBorderHeight(this);
         }
 
         protected void customizeCellRenderer(@NotNull JList<? extends FactorioRuntimeEnvironmentRef> list, FactorioRuntimeEnvironmentRef value, int index, boolean selected, boolean hasFocus) {

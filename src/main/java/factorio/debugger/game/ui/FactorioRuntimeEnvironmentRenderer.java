@@ -6,7 +6,6 @@ import java.util.function.Supplier;
 import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import com.intellij.javascript.nodejs.interpreter.LeftRightJustifyingLayoutManager;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;

@@ -16,8 +16,6 @@ import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessHandlerFactory;
 import com.intellij.execution.process.ProcessTerminatedListener;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreter;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.io.BaseDataReader;
@@ -31,7 +29,7 @@ import factorio.debugger.game.FactorioRuntimeEnvironmentRef;
 
 public class FactorioRunProfileState extends CommandLineState {
     private final FactorioRunConfigurationOptions myOptions;
-    private @Nullable final NodeJsInterpreter myNodeJsInterpreter;
+    private @Nullable final String myNodeJsInterpreter;
     private @Nullable final FactorioFMTKRuntimeEnvironment myFMTKEnv;
     private final FactorioGameRuntimeEnvironment myFactorioGameEnv;
     private final FactorioRunConfiguration myRunConfiguration;
@@ -47,7 +45,7 @@ public class FactorioRunProfileState extends CommandLineState {
         myProject = runConfiguration.getProject();
         myOptions = runConfiguration.getOptions();
 
-        myNodeJsInterpreter = NodeJsInterpreterRef.create(myOptions.getNodeJsInterpreterRef()).resolve(myProject);
+        myNodeJsInterpreter = myOptions.getNodeJsInterpreterRef();
         myFactorioGameEnv = new FactorioRuntimeEnvironmentRef(myOptions.getFactorioRuntimeRef()).resolveAsFactorioGame();
         myFMTKEnv = new FactorioRuntimeEnvironmentRef(myOptions.getFMTKPackage()).resolveAsFMTK();
     }

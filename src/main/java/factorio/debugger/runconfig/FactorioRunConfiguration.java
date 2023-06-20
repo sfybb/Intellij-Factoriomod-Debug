@@ -1,5 +1,8 @@
 package factorio.debugger.runconfig;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.intellij.execution.Executor;
@@ -8,8 +11,6 @@ import com.intellij.execution.configurations.RunConfigurationBase;
 import com.intellij.execution.configurations.RunProfileState;
 import com.intellij.execution.configurations.RuntimeConfigurationException;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreter;
-import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRef;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
@@ -42,14 +43,14 @@ public class FactorioRunConfiguration extends RunConfigurationBase<FactorioRunCo
             throw new RuntimeConfigurationException("Invalid Factorio modding toolkit package!");
         }
 
-        NodeJsInterpreter nodeJsInterpreter = NodeJsInterpreterRef.create(options.getNodeJsInterpreterRef()).resolve(getProject());
-        if(nodeJsInterpreter == null) {
-            throw new RuntimeConfigurationException("Missing Factorio modding toolkit npm package!");
+        File nodeJsInterpreter = Path.of(options.getNodeJsInterpreterRef()).toAbsolutePath().toFile();
+        if(!nodeJsInterpreter.exists() || !nodeJsInterpreter.isFile() || !Files.isExecutable(Path.of(options.getNodeJsInterpreterRef()))) {
+            throw new RuntimeConfigurationException("Missing Node JS interpreter");
         }
-        String nodeJsError = nodeJsInterpreter.validate(getProject());
+        /*String nodeJsError = nodeJsInterpreter.validate(getProject());
         if(nodeJsError != null) {
             throw new RuntimeConfigurationException(nodeJsError);
-        }
+        }*/
     }
 
     @NotNull
