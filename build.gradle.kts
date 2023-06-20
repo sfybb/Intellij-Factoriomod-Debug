@@ -15,9 +15,9 @@ repositories {
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
     /*version.set("2022.2.5")*/  version.set("231.9011.34")
-    type.set("IU") // Target IDE Platform
+    type.set("IC") // Target IDE Platform
 
-    plugins.set(listOf("JavaScriptDebugger", "JavaScript", "au.com.glassechidna.luanalysis:1.4.0"/*, "com.tang:1.3.7.2-IDEA222"*/))
+    plugins.set(listOf(/*"JavaScriptDebugger", "JavaScript",*/ "au.com.glassechidna.luanalysis:1.4.0"/*, "com.tang:1.3.7.2-IDEA222"*/))
 }
 
 tasks {
