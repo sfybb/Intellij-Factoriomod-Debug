@@ -49,7 +49,7 @@ public class FactorioGameRuntimeEnvironment implements FactorioRuntimeEnvironmen
         return myVersion != null && FactorioUtil.checkForFactorio(myHomePath);
     }
 
-    public String getExecuteablePath() {
+    public @NotNull String getExecuteablePath() {
         String execPath = Path.of(myHomePath, "bin", "x64", "factorio").toString();
         return SystemInfo.isWindows ? execPath + WIN_EXE_EXT : execPath;
     }

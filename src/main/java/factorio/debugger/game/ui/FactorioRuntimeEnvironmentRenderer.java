@@ -4,7 +4,6 @@ import java.awt.*;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.swing.*;
-import javax.swing.border.Border;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.javascript.nodejs.interpreter.LeftRightJustifyingLayoutManager;
@@ -47,7 +46,7 @@ public class FactorioRuntimeEnvironmentRenderer implements ListCellRenderer<Fact
 
         if (compact) {
             adjustBorderHeight(this.myNameComp);
-            this.myVersionComp.setMyBorder((Border)null);
+            this.myVersionComp.setMyBorder(null);
         }
 
         JPanel nameContainer = wrapInLeftRightJustifyingContainer(this.myNameComp);
@@ -86,16 +85,14 @@ public class FactorioRuntimeEnvironmentRenderer implements ListCellRenderer<Fact
             UIUtil.setEnabled(this.myPanel, list.isEnabled(), true);
         }
 
-        if (runtimeEnvRef == null) {
-            return this.myPanel;
-        } else {
+        if (runtimeEnvRef != null) {
             this.myPanel.setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
             Color foreground = isSelected ? list.getSelectionForeground() : list.getForeground();
             this.myNameComp.setForeground(foreground);
             this.myVersionComp.setForeground(foreground);
             this.customize(list, runtimeEnvRef, indx, isSelected);
-            return this.myPanel;
         }
+        return this.myPanel;
     }
 
     private void customize(@NotNull JList<? extends FactorioRuntimeEnvironmentRef> list,
@@ -114,11 +111,9 @@ public class FactorioRuntimeEnvironmentRenderer implements ListCellRenderer<Fact
 
             this.myPanel.setToolTipText(errorMessage);
 
-            boolean valid = runtimeEnv != null && errorMessage == null;
             String unresolvedReferenceName;
             if (runtimeEnv != null) {
-                this.myNameComp.append(runtimeEnv.getPresentableName(),
-                    valid ? SimpleTextAttributes.REGULAR_ATTRIBUTES : SimpleTextAttributes.ERROR_ATTRIBUTES);
+                this.myNameComp.append(runtimeEnv.getPresentableName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
             } else {
                 unresolvedReferenceName = runtimeEnvRef.getReferenceName();
                 this.myNameComp.append(unresolvedReferenceName + " (" +

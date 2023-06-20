@@ -1,7 +1,12 @@
 package factorio.debugger.game
 
-import com.intellij.openapi.project.*
-import com.intellij.openapi.vfs.*
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.modules
+import com.intellij.openapi.project.rootManager
+import com.intellij.openapi.vfs.JarFileSystem
+import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.xdebugger.XSourcePosition
 import factorio.debugger.DAP.messages.types.DAPModule
 import java.net.URI
@@ -133,7 +138,7 @@ class FactorioMod(private val myId: String, private val myName: String, private 
     }
 
     /**
-     * Converts the line number [sLine] from the source file to the associated Factorio lua script line
+     * Converts the line number [sPosition] from the source file to the associated Factorio lua script line
      * If this script has no source map the position is unchanged otherwise the reverse source mapped line is returned
      * This is the inverse of [convertFactorioToSource]
      *
@@ -198,9 +203,9 @@ class FactorioMod(private val myId: String, private val myName: String, private 
             return foundInfoJson?.parent
         }
         fun fromModule(module: DAPModule, myProject: Project, factorioEnv: FactorioGameRuntimeEnvironment): FactorioMod? {
-            if (module.id.equals("#user")) return null
+            if (module.id == "#user") return null
 
-            val pathString = module.path ?: module.symbolFilePath ?: null
+            val pathString = module.path ?: module.symbolFilePath
 
             val path: Path
             val modRootFile: VirtualFile?

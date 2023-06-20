@@ -18,18 +18,18 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.security.MessageDigest
 
-class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile, private val relativePath: Path) {
+class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile, relativePath: Path) {
     private val mySourceMap: SourceMap?
     init {
         val sourceMapPath = relativePath.resolveSibling(relativePath.fileName.toString() + ".map")
         val sourceMapFile = mod.getRelativeFile(sourceMapPath)
 
-        if (sourceMapFile?.exists() == true) {
-            val fileContent = IOUtils.toString(sourceMapFile.inputStream, StandardCharsets.UTF_8);
-            mySourceMap = decodeSourceMapSafely(fileContent, true,
-                    newLocalFileUrl(sourceMapFile.path), true)
+        mySourceMap = if (sourceMapFile?.exists() == true) {
+            val fileContent = IOUtils.toString(sourceMapFile.inputStream, StandardCharsets.UTF_8)
+            decodeSourceMapSafely(fileContent, true,
+                newLocalFileUrl(sourceMapFile.path), true)
         } else {
-            mySourceMap = null
+            null
         }
     }
 
@@ -61,7 +61,7 @@ class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile
     fun convertFactorioToSource(fPosition: XSourcePosition): XSourcePosition {
         // TODO move to correct position in FactorioLocalPositionConverter
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
-        if (mySourceMap == null) return fPosition;
+        if (mySourceMap == null) return fPosition
 
         val entry = mySourceMap.generatedMappings.get(fPosition.line, 1)
 
@@ -76,7 +76,7 @@ class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile
     }
 
     /**
-     * Converts the line number [sLine] from the source file to the associated Factorio lua script line
+     * Converts the line number [sPosition] from the source file to the associated Factorio lua script line
      * If this script has no source map the position is unchanged otherwise the reverse source mapped line is returned
      * This is the inverse of [convertFactorioToSource]
      *
@@ -84,7 +84,7 @@ class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile
      * @return the line in the associated source file
      */
     fun convertSourceToFactorio(sPosition: XSourcePosition): XSourcePosition? {
-        if (mySourceMap == null) return sPosition;
+        if (mySourceMap == null) return sPosition
 
         val fileUrl: Url? = Urls.parseEncoded(sPosition.file.url)
         val urlIndx = if (fileUrl != null) mySourceMap.sourceResolver.getSourceIndex(fileUrl) else -1
