@@ -90,6 +90,11 @@ public class FactorioFMTKRuntimeEnvironmentType extends FactorioRuntimeEnvironme
         return "FMTK packages";
     }
 
+    @Override
+    public String getEnvironmentName() {
+        return "FMTK";
+    }
+
     private static @Nullable FactorioFMTKRuntimeEnvironment chooseInterpreter(@Nullable FactorioRuntimeEnvironment runtimeEnv) {
         FileChooserDescriptor descriptor = FileChooserDescriptorFactory.createSingleFolderDescriptor().withShowHiddenFiles(SystemInfo.isUnix);
             //.createSingleFileNoJarsDescriptor().withShowHiddenFiles(SystemInfo.isUnix);

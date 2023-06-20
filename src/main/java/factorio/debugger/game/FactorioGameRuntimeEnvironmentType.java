@@ -89,6 +89,11 @@ public class FactorioGameRuntimeEnvironmentType extends FactorioRuntimeEnvironme
         return "Factorio game installations";
     }
 
+    @Override
+    public String getEnvironmentName() {
+        return "Factorio";
+    }
+
     private static @Nullable FactorioGameRuntimeEnvironment chooseInterpreter(@Nullable FactorioRuntimeEnvironment runtimeEnv) {
         // Choose folders or executable files
         FileChooserDescriptor descriptor = new FileChooserDescriptor(true, true, false, false, false, false) {

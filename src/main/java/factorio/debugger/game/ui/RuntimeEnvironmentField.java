@@ -10,7 +10,6 @@ import javax.swing.event.PopupMenuEvent;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.ide.DataManager;
 import com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRenderer;
-import com.intellij.lang.javascript.JavaScriptBundle;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
@@ -25,6 +24,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.containers.ContainerUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
+import factorio.debugger.FactorioDebuggerBundle;
 import factorio.debugger.game.FactorioRuntimeEnvironment;
 import factorio.debugger.game.FactorioRuntimeEnvironmentRef;
 import factorio.debugger.game.FactorioRuntimeEnvironmentType;
@@ -216,9 +216,9 @@ public class RuntimeEnvironmentField extends ComponentWithBrowseButton<ComboBox<
 
         protected void customizeCellRenderer(@NotNull JList<? extends FactorioRuntimeEnvironmentRef> list, FactorioRuntimeEnvironmentRef value, int index, boolean selected, boolean hasFocus) {
             if (value == ADD_INTERPRETER) {
-                this.append(" " + JavaScriptBundle.message("node.interpreter.field.add.item.text"), new SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, JBColor.darkGray));
+                this.append(" " + FactorioDebuggerBundle.message("environment.field.add.item"), new SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, JBColor.darkGray));
             } else {
-                this.append(JavaScriptBundle.message("node.interpreter.field.unexpected_value.text", value), new SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, JBColor.RED));
+                this.append(FactorioDebuggerBundle.message("environment.field.unexpected_value", value), new SimpleTextAttributes(SimpleTextAttributes.STYLE_PLAIN, JBColor.RED));
             }
 
         }

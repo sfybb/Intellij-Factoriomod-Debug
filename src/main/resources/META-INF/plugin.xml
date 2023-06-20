@@ -38,6 +38,7 @@ Features:
   <depends optional="true" config-file="optionalLuaAnalysis.xml">au.com.glassechidna.luanalysis</depends>
   <depends optional="true" config-file="optionalEmmyLua.xml">com.tang</depends>
 
+  <resource-bundle>messages.FactorioDebugger</resource-bundle>
   <!-- Extension points defined by the plugin.
        Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
   <extensionPoints>

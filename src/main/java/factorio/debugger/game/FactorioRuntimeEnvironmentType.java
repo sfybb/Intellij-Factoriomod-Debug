@@ -28,4 +28,6 @@ public abstract class FactorioRuntimeEnvironmentType<T extends FactorioRuntimeEn
     public abstract T edit(final FactorioRuntimeEnvironment runtimeEnv);
 
     public abstract String getChooserDialogTitle();
+
+    public abstract String getEnvironmentName();
 }

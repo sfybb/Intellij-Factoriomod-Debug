@@ -7,13 +7,13 @@ import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import com.intellij.javascript.nodejs.interpreter.LeftRightJustifyingLayoutManager;
-import com.intellij.lang.javascript.JavaScriptBundle;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import factorio.debugger.FactorioDebuggerBundle;
 import factorio.debugger.game.FactorioRuntimeEnvironment;
 import factorio.debugger.game.FactorioRuntimeEnvironmentRef;
 import factorio.debugger.game.FactorioRuntimeEnvironmentType;
@@ -23,7 +23,7 @@ import factorio.debugger.game.FactorioVersion;
  * Re-Implementation of com.intellij.javascript.nodejs.interpreter.NodeJsInterpreterRenderer for RuntimeEnvironmentField
  */
 public class FactorioRuntimeEnvironmentRenderer implements ListCellRenderer<FactorioRuntimeEnvironmentRef> {
-    private static final Supplier<@Nls String> NO_INTERPRETER_TEXT = JavaScriptBundle.messagePointer("node.no.interpreter");
+    private static final Supplier<@Nls String> NO_INTERPRETER_TEXT = FactorioDebuggerBundle.messagePointer("environment.no.references");
     private final SimpleColoredComponent myNameComp;
     private final SimpleColoredComponent myVersionComp;
     private final List<FactorioRuntimeEnvironmentType<?>> myRuntimeTypes;
@@ -117,7 +117,7 @@ public class FactorioRuntimeEnvironmentRenderer implements ListCellRenderer<Fact
             } else {
                 unresolvedReferenceName = runtimeEnvRef.getReferenceName();
                 this.myNameComp.append(unresolvedReferenceName + " (" +
-                    JavaScriptBundle.message("node.interpreter.reference_not_found.text") + ")",
+                    FactorioDebuggerBundle.message("environment.reference_not_found.text") + ")",
                     SimpleTextAttributes.ERROR_ATTRIBUTES);
             }
 

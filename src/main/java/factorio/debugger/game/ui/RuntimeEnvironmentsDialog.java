@@ -12,7 +12,6 @@ import java.util.function.Consumer;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import com.intellij.lang.javascript.JavaScriptBundle;
 import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -41,6 +40,7 @@ import com.intellij.util.ArrayUtil;
 import com.intellij.util.containers.MultiMap;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.update.UiNotifyConnector;
+import factorio.debugger.FactorioDebuggerBundle;
 import factorio.debugger.game.FactorioRuntimeEnvironment;
 import factorio.debugger.game.FactorioRuntimeEnvironmentRef;
 import factorio.debugger.game.FactorioRuntimeEnvironmentType;
@@ -276,8 +276,8 @@ public class RuntimeEnvironmentsDialog extends DialogWrapper {
         ShortcutSet shortcutSet = CommonActionsPanel.getCommonShortcut(CommonActionsPanel.Buttons.ADD);
         Shortcut shortcut = ArrayUtil.getFirstElement(shortcutSet.getShortcuts());
 
-        return shortcut != null ? JavaScriptBundle.message("status.text.add.interpreter.with", KeymapUtil.getShortcutText(shortcut)):
-            JavaScriptBundle.message("status.text.no.interpreters.added");
+        return shortcut != null ? FactorioDebuggerBundle.message("environment.status.add.with", KeymapUtil.getShortcutText(shortcut)):
+            FactorioDebuggerBundle.message("environment.nothing.added");
     }
 
     private static class AddInterpreterTypeAction extends DumbAwareAction {
@@ -285,7 +285,7 @@ public class RuntimeEnvironmentsDialog extends DialogWrapper {
         private final Consumer<? super FactorioRuntimeEnvironment> myCallback;
 
         AddInterpreterTypeAction(@NotNull FactorioRuntimeEnvironmentType<?> type, @NotNull Consumer<? super FactorioRuntimeEnvironment> callback) {
-            super(JavaScriptBundle.message("node.js.add.interpreter.action", StringUtil.capitalize(type.getName())));
+            super(FactorioDebuggerBundle.message("environment.add.action", StringUtil.capitalize(type.getName())));
             this.myType = type;
             this.myCallback = callback;
         }
