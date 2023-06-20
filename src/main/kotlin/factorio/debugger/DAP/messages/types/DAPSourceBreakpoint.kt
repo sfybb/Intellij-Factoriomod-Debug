@@ -1,14 +1,15 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPSourceBreakpoint extends DAPAdditionalProperties {
+class DAPSourceBreakpoint : DAPAdditionalProperties {
     /**
      * The source line of the breakpoint or logpoint.
      */
+    @JvmField
     @JsonProperty("line")
-    public int line;
+    var line = 0
 
     /**
      * Start position within source line of the breakpoint or logpoint. It is
@@ -16,7 +17,7 @@ public class DAPSourceBreakpoint extends DAPAdditionalProperties {
      * determines whether it is 0- or 1-based.
      */
     @JsonProperty("column")
-    public int column;
+    var column: Int = 0
 
     /**
      * The expression for conditional breakpoints.
@@ -24,7 +25,7 @@ public class DAPSourceBreakpoint extends DAPAdditionalProperties {
      * `supportsConditionalBreakpoints` is true.
      */
     @JsonProperty("condition")
-    public String condition;
+    var condition: String? = null
 
     /**
      * The expression that controls how many hits of the breakpoint are ignored.
@@ -36,7 +37,7 @@ public class DAPSourceBreakpoint extends DAPAdditionalProperties {
      * stop only if both conditions are met.
      */
     @JsonProperty("hitCondition")
-    public String hitCondition;
+    var hitCondition: String? = null
 
     /**
      * If this attribute exists and is non-empty, the debug adapter must not
@@ -48,14 +49,11 @@ public class DAPSourceBreakpoint extends DAPAdditionalProperties {
      * should only be logged if those conditions are met.
      */
     @JsonProperty("logMessage")
-    public String logMessage;
+    var logMessage: String? = null
 
-    public DAPSourceBreakpoint() {
-
-    }
-
-    public DAPSourceBreakpoint(final int line) {
-        this.line = line;
-        this.column = 0;
+    constructor()
+    constructor(line: Int) {
+        this.line = line
+        column = 0
     }
 }

@@ -1,21 +1,21 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPVariablePresentationHint;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPVariablePresentationHint
 
 @JsonTypeName("evaluate")
-public class DAPEvaluateResponse extends DAPResponse {
+class DAPEvaluateResponse : DAPResponse() {
     @JsonProperty("body")
-    public Body body;
-    public static class Body extends DAPAdditionalProperties {
+    lateinit var body: EvaluateResponseBody
+
+    class EvaluateResponseBody : DAPAdditionalProperties() {
         /**
          * The result of the evaluate request.
          */
         @JsonProperty("result")
-        public String result;
+        lateinit var result: String
 
         /**
          * The type of the evaluate result.
@@ -23,14 +23,14 @@ public class DAPEvaluateResponse extends DAPResponse {
          * corresponding capability `supportsVariableType` is true.
          */
         @JsonProperty("type")
-        public String type;
+        var type: String? = null
 
         /**
          * Properties of an evaluate result that can be used to determine how to
          * render the result in the UI.
          */
         @JsonProperty("presentationHint")
-        public DAPVariablePresentationHint presentationHint;
+        var presentationHint: DAPVariablePresentationHint? = null
 
         /**
          * If `variablesReference` is > 0, the evaluate result is structured and its
@@ -39,7 +39,7 @@ public class DAPEvaluateResponse extends DAPResponse {
          * of Object References' in the Overview section for details.
          */
         @JsonProperty("variablesReference")
-        public int variablesReference;
+        var variablesReference: Int = 0
 
         /**
          * The number of named child variables.
@@ -48,7 +48,7 @@ public class DAPEvaluateResponse extends DAPResponse {
          * The value should be less than or equal to 2147483647 (2^31-1).
          */
         @JsonProperty("namedVariables")
-        public Integer namedVariables;
+        var namedVariables: Int? = null
 
         /**
          * The number of indexed child variables.
@@ -57,7 +57,7 @@ public class DAPEvaluateResponse extends DAPResponse {
          * The value should be less than or equal to 2147483647 (2^31-1).
          */
         @JsonProperty("indexedVariables")
-        public Integer indexedVariables;
+        var indexedVariables: Int? = null
 
         /**
          * A memory reference to a location appropriate for this result.
@@ -67,6 +67,10 @@ public class DAPEvaluateResponse extends DAPResponse {
          * capability `supportsMemoryReferences` is true.
          */
         @JsonProperty("memoryReference")
-        public String memoryReference;
+        var memoryReference: String? = null
+    }
+
+    override fun toString(): String {
+        return "${super.toString()} Result '${body.result}' Ref: ${body.variablesReference}"
     }
 }

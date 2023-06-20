@@ -1,36 +1,36 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPDisassembledInstruction extends DAPAdditionalProperties {
+class DAPDisassembledInstruction : DAPAdditionalProperties() {
     /**
      * The address of the instruction. Treated as a hex value if prefixed with
      * `0x`, or as a decimal value otherwise.
      */
     @JsonProperty("address")
-    public String address;
+    lateinit var address: String
 
     /**
      * Raw bytes representing the instruction and its operands, in an
      * implementation-defined format.
      */
     @JsonProperty("instructionBytes")
-    public String instructionBytes;
+    var instructionBytes: String? = null
 
     /**
      * Text representing the instruction and its operands, in an
      * implementation-defined format.
      */
     @JsonProperty("instruction")
-    public String instruction;
+    lateinit var instruction: String
 
     /**
      * Name of the symbol that corresponds with the location of this instruction,
      * if any.
      */
     @JsonProperty("symbol")
-    public String symbol;
+    var symbol: String? = null
 
     /**
      * Source location that corresponds to this instruction, if any.
@@ -39,30 +39,30 @@ public class DAPDisassembledInstruction extends DAPAdditionalProperties {
      * file as the previous instruction.
      */
     @JsonProperty("location")
-    public DAPSource location;
+    var location: DAPSource? = null
 
     /**
      * The line within the source location that corresponds to this instruction,
      * if any.
      */
     @JsonProperty("line")
-    public Integer line;
+    var line: Int? = null
 
     /**
      * The column within the line that corresponds to this instruction, if any.
      */
     @JsonProperty("column")
-    public Integer column;
+    var column: Int? = null
 
     /**
      * The end line of the range that corresponds to this instruction, if any.
      */
     @JsonProperty("endLine")
-    public Integer endLine;
+    var endLine: Int? = null
 
     /**
      * The end column of the range that corresponds to this instruction, if any.
      */
     @JsonProperty("endColumn")
-    public Integer endColumn;
+    var endColumn: Int? = null
 }

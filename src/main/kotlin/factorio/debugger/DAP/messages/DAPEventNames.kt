@@ -1,5 +1,11 @@
-package factorio.debugger.DAP.messages;
+package factorio.debugger.DAP.messages
 
-public enum DAPEventNames {
-    STOPPED, OUTPUT, LOADEDSOURCE, MODULE, INITIALIZED, BREAKPOINT, TERMINATED
+enum class DAPEventNames {
+    STOPPED,
+    OUTPUT,
+    LOADEDSOURCE,
+    MODULE,
+    INITIALIZED,
+    BREAKPOINT,
+    TERMINATED
 }

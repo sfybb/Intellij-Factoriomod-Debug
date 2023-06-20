@@ -1,25 +1,22 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPVariable;
-import factorio.debugger.DAP.messages.types.DAPVariablePresentationHint;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPVariable
+import factorio.debugger.DAP.messages.types.DAPVariablePresentationHint
 
 @JsonTypeName("setExpression")
-public class DAPSetExpressionResponse extends DAPResponse {
-
+class DAPSetExpressionResponse : DAPResponse() {
     @JsonProperty("body")
-    public Body body;
+    lateinit var body: SetExpressionResponseBody
 
-    public static class Body {
+    class SetExpressionResponseBody : DAPAdditionalProperties() {
         /**
          * The new value of the expression.
          */
         @JsonProperty("value")
-        public @NotNull String value;
+        lateinit var value: String
 
         /**
          * The type of the value.
@@ -27,14 +24,14 @@ public class DAPSetExpressionResponse extends DAPResponse {
          * corresponding capability `supportsVariableType` is true.
          */
         @JsonProperty("type")
-        public @Nullable String type;
+        var type: String? = null
 
         /**
          * Properties of a value that can be used to determine how to render the
          * result in the UI.
          */
         @JsonProperty("presentationHint")
-        public @Nullable DAPVariablePresentationHint presentationHint;
+        var presentationHint: DAPVariablePresentationHint? = null
 
         /**
          * If `variablesReference` is > 0, the evaluate result is structured and its
@@ -43,7 +40,7 @@ public class DAPSetExpressionResponse extends DAPResponse {
          * of Object References' in the Overview section for details.
          */
         @JsonProperty("variablesReference")
-        public @Nullable Integer variablesReference;
+        var variablesReference: Int? = null
 
         /**
          * The number of named child variables.
@@ -52,7 +49,7 @@ public class DAPSetExpressionResponse extends DAPResponse {
          * The value should be less than or equal to 2147483647 (2^31-1).
          */
         @JsonProperty("namedVariables")
-        public @Nullable Integer namedVariables;
+        var namedVariables: Int? = null
 
         /**
          * The number of indexed child variables.
@@ -61,19 +58,17 @@ public class DAPSetExpressionResponse extends DAPResponse {
          * The value should be less than or equal to 2147483647 (2^31-1).
          */
         @JsonProperty("indexedVariables")
-        public @Nullable Integer indexedVariables;
-
-        public DAPVariable toVariable() {
-            DAPVariable res = new DAPVariable();
-            res = new DAPVariable();
-            res.value = value;
-            res.type = type;
-            res.presentationHint = presentationHint;
-            res.variablesReference = variablesReference != null ? variablesReference : 0;
-            res.namedVariables = namedVariables;
-            res.indexedVariables = indexedVariables;
-            res.memoryReference = null;
-            return res;
+        var indexedVariables: Int? = null
+        fun toVariable(): DAPVariable {
+            val res = DAPVariable()
+            res.value = value
+            res.type = type
+            res.presentationHint = presentationHint
+            res.variablesReference = variablesReference ?: 0
+            res.namedVariables = namedVariables
+            res.indexedVariables = indexedVariables
+            res.memoryReference = null
+            return res
         }
     }
 }

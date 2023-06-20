@@ -1,306 +1,264 @@
-package factorio.debugger.DAP;
+package factorio.debugger.DAP
 
-import static org.jetbrains.concurrency.Promises.collectResults;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CancellationException;
-import java.util.function.Consumer;
-import org.apache.commons.collections.buffer.CircularFifoBuffer;
-import org.jetbrains.annotations.Async;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.concurrency.AsyncPromise;
-import org.jetbrains.concurrency.Promise;
-import org.jetbrains.concurrency.Promises;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.intellij.execution.process.ProcessEvent;
-import com.intellij.execution.process.ProcessListener;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.Key;
-import factorio.debugger.DAP.messages.DAPEvent;
-import factorio.debugger.DAP.messages.DAPEventNames;
-import factorio.debugger.DAP.messages.DAPProtocolMessage;
-import factorio.debugger.DAP.messages.DAPRequest;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.events.DAPOutputEvent;
-import factorio.debugger.DAP.messages.requests.DAPCancelRequest;
-import factorio.debugger.DAP.messages.requests.DAPTerminateRequest;
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.ObjectWriter
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessListener
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.util.Key
+import factorio.debugger.DAP.messages.DAPEventNames
+import factorio.debugger.DAP.messages.DAPProtocolMessage
+import factorio.debugger.DAP.messages.events.DAPEvent
+import factorio.debugger.DAP.messages.events.DAPOutputEvent
+import factorio.debugger.DAP.messages.events.DAPOutputEvent.OutputEventBody
+import factorio.debugger.DAP.messages.requests.DAPCancelRequest
+import factorio.debugger.DAP.messages.requests.DAPCancelRequest.CancelRequestArguments
+import factorio.debugger.DAP.messages.requests.DAPRequest
+import factorio.debugger.DAP.messages.requests.DAPTerminateRequest
+import factorio.debugger.DAP.messages.responses.DAPResponse
+import org.apache.commons.collections.buffer.CircularFifoBuffer
+import org.jetbrains.annotations.Async
+import org.jetbrains.concurrency.AsyncPromise
+import org.jetbrains.concurrency.Promise
+import org.jetbrains.concurrency.collectResults
+import org.jetbrains.concurrency.rejectedPromise
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.OutputStream
+import java.util.concurrent.CancellationException
+import java.util.function.Consumer
 
-public class DAPSocket implements ProcessListener {
-    private final Logger logger = Logger.getInstance(DAPSocket.class);
-    private final ObjectMapper myObjectMapper;
-    private final OutputStream myOutputStream;
+class DAPSocket(outputStream: OutputStream?) : ProcessListener {
+    private val logger = Logger.getInstance(DAPSocket::class.java)
+    private val myObjectMapper: ObjectMapper
+    private val myOutputStream: OutputStream?
+    private var cur_send_sequence: Int
+    private val cur_receive_sequence: Int
+    private val myDAPParser: DAPMessageParser
+    private val openPromises: MutableMap<Int, AsyncPromise<DAPResponse>>
+    private val eventHandlers: MutableMap<DAPEventNames, Consumer<DAPEvent>>
+    private val messageBodyBuilder: StringBuilder? = null
+    private val lastMessages: CircularFifoBuffer
+    private var myCancelRequestEnabled = false
+    private var requestedTermination = false
+    private val myActiveEvents: MutableMap<Int, AsyncPromise<Boolean>>
 
-    private int cur_send_sequence;
-    private int cur_receive_sequence;
-
-    private final @NotNull DAPMessageParser myDAPParser;
-
-
-    private final Map<Integer, AsyncPromise<DAPResponse>> openPromises;
-
-    private final Map<DAPEventNames, Consumer<DAPEvent>> eventHandlers;
-
-    private StringBuilder messageBodyBuilder;
-
-    private final CircularFifoBuffer lastMessages;
-    private boolean myCancelRequestEnabled;
-    private boolean requestedTermination;
-
-    private final Map<Integer, AsyncPromise<Boolean>> myActiveEvents;
-
-
-    public DAPSocket(OutputStream outputStream) {
-        myActiveEvents = new HashMap<>();
-        myCancelRequestEnabled = false;
-        requestedTermination = false;
-        myObjectMapper = new ObjectMapper();
-        myObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-        myOutputStream = outputStream;
-
-        cur_send_sequence = cur_receive_sequence = 1;
-        myDAPParser = new DAPMessageParser();
-        lastMessages = new CircularFifoBuffer(20);
-
-        openPromises = new HashMap<>();
-        eventHandlers = new HashMap<>();
+    init {
+        myActiveEvents = HashMap()
+        myObjectMapper = jacksonObjectMapper()
+        myObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+        myOutputStream = outputStream
+        cur_receive_sequence = 1
+        cur_send_sequence = cur_receive_sequence
+        myDAPParser = DAPMessageParser()
+        lastMessages = CircularFifoBuffer(20)
+        openPromises = HashMap()
+        eventHandlers = HashMap()
     }
 
-    public ObjectWriter getPrettyPrinter() {
-        return myObjectMapper.writerWithDefaultPrettyPrinter();
-    }
+    val prettyPrinter: ObjectWriter
+        get() = myObjectMapper.writerWithDefaultPrettyPrinter()
 
-    public void printLastMessages() {
-        Iterator iter = lastMessages.iterator();
-        int curMsg = -lastMessages.size();
-        while(iter.hasNext()) {
-            Object o = iter.next();
-            curMsg++;
+    fun printLastMessages() {
+        val iter: Iterator<*> = lastMessages.iterator()
+        var curMsg = -lastMessages.size
+        while (iter.hasNext()) {
+            val o = iter.next()!!
+            curMsg++
             try {
-                logger.info(String.format("Message %d: %s", curMsg,
-                    getPrettyPrinter().writeValueAsString(o)));
-            } catch (JsonProcessingException e) {
-                logger.info(String.format("Message %d: error: %s", curMsg, e.getMessage()));
+                logger.info("Message $curMsg: ${prettyPrinter.writeValueAsString(o)}")
+            } catch (e: JsonProcessingException) {
+                logger.info("Message $curMsg: error: ${e.message}")
             }
         }
     }
 
-    public void setEventHandler(DAPEventNames eventName, Consumer<DAPEvent> consumer) {
-        eventHandlers.put(eventName, consumer);
+    fun setEventHandler(eventName: DAPEventNames, consumer: Consumer<DAPEvent>) {
+        eventHandlers[eventName] = consumer
     }
 
-
-    public<D, R extends DAPResponse> Promise<R> sendRequest(@NotNull DAPRequest<D> request) {
-        boolean success = false;
-        if(myOutputStream != null) {
-            success = sendRequestInternal(request, cur_send_sequence++);
+    fun <D, R : DAPResponse> sendRequest(request: DAPRequest<D>): Promise<R> {
+        var success = false
+        if (myOutputStream != null) {
+            success = sendRequestInternal(request, cur_send_sequence++)
         }
-
-        if(!success) {
-            return Promises.rejectedPromise();
+        if (!success) {
+            return rejectedPromise()
         }
-
-        AsyncPromise<DAPResponse> promise = new AsyncPromise<>();
-        openPromises.put(request.sequence, promise);
-        if (myCancelRequestEnabled && !(request instanceof DAPCancelRequest)) {
-            promise = addCancellationHandler(promise, request.sequence);
+        var promise = AsyncPromise<DAPResponse>()
+        openPromises[request.sequence] = promise
+        if (myCancelRequestEnabled && request !is DAPCancelRequest) {
+            promise = addCancellationHandler(promise, request.sequence)
         }
-        return promise.then(response -> (R)response);
+        return promise.then { response: DAPResponse -> response as R }
     }
 
-    private AsyncPromise<DAPResponse> addCancellationHandler(final AsyncPromise<DAPResponse> promise, int request_seq) {
-        return promise.onError(err -> {
-            if(err instanceof CancellationException) {
-                logger.info(String.format("Sending cancel request for %d", request_seq));
-                sendRequest(new DAPCancelRequest(request_seq));
+    private fun addCancellationHandler(promise: AsyncPromise<DAPResponse>, request_seq: Int): AsyncPromise<DAPResponse> {
+        return promise.onError { err: Throwable? ->
+            if (err is CancellationException) {
+                logger.info("Sending cancel request for $request_seq")
+                sendRequest<CancelRequestArguments, DAPResponse>(DAPCancelRequest(request_seq))
             }
-        });
+        }
     }
 
-    protected <D> boolean sendRequestInternal(@NotNull DAPRequest<D> request,
-                                              @Async.Schedule @NotNull Integer sequence) {
-
-        requestedTermination |= request instanceof DAPTerminateRequest;
-
-        printMessageDebug(request);
-
+    protected fun <D> sendRequestInternal(
+        request: DAPRequest<D>,
+        @Async.Schedule sequence: Int
+    ): Boolean {
+        requestedTermination = requestedTermination or (request is DAPTerminateRequest)
+        printMessageDebug(request)
         try {
-            request.sequence = sequence;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            byte[] content = myObjectMapper.writeValueAsBytes(request);
+            request.sequence = sequence
+            val baos = ByteArrayOutputStream()
+            val content = myObjectMapper.writeValueAsBytes(request)
 
             // Header
-            baos.write(DAPMessageParser.contentLengthHeader.getBytes());
-            baos.write(Integer.toString(content.length).getBytes());
-            baos.write("\r\n".getBytes());
-            baos.write("\r\n".getBytes());
+            baos.write(DAPMessageParser.contentLengthHeader.toByteArray())
+            baos.write(Integer.toString(content.size).toByteArray())
+            baos.write("\r\n".toByteArray())
+            baos.write("\r\n".toByteArray())
 
             // Body
-            baos.write(content);
+            baos.write(content)
 
             // only add message if sending was successful
-            lastMessages.add(request);
-            //logger.info(String.format("To FMTK: %s%d\n\n%s", contentLengthHeader, content.length, new String(content, StandardCharsets.UTF_8)));
-            myOutputStream.write(baos.toByteArray());
-            myOutputStream.flush();
+            lastMessages.add(request)
+            //logger.info("To FMTK: %s%d\n\n%s", contentLengthHeader, content.length, new String(content, StandardCharsets.UTF_8)));
+            myOutputStream!!.write(baos.toByteArray())
+            myOutputStream.flush()
 
 
             //logger.info(getPrettyPrinter().writeValueAsString(request));
-        } catch (IOException e) {
+        } catch (e: IOException) {
             if (requestedTermination) {
                 // ignore this
             } else {
-                logger.warn("Failed to send DAP request '" + request + "'", e);
+                logger.warn("Failed to send DAP request '$request'", e)
+                return false
             }
         }
-        return true;
+        return true
     }
 
-    private void printMessageDebug(final @NotNull DAPProtocolMessage message) {
-        Consumer<DAPEvent> consumer = eventHandlers.get(DAPEventNames.OUTPUT);
-        if (consumer != null) consumer.accept(this.createNewDebugOutput(message));
+    private fun printMessageDebug(message: DAPProtocolMessage) {
+        val consumer = eventHandlers[DAPEventNames.OUTPUT]
+        consumer?.accept(createNewDebugOutput(message))
     }
 
-    private DAPEvent createNewDebugOutput(final @NotNull DAPProtocolMessage message) {
-        DAPOutputEvent myDebugEvent = new DAPOutputEvent();
-        myDebugEvent.body = new DAPOutputEvent.OutputEventBody();
-        myDebugEvent.body.category = DAPOutputEvent.OutputEventBody.OutputCategory.TELEMETRY;
-
-
-        if (message instanceof DAPEvent || message instanceof DAPResponse) {
-            myDebugEvent.body.output = "---> ";
+    private fun createNewDebugOutput(message: DAPProtocolMessage): DAPEvent {
+        val myDebugEvent = DAPOutputEvent()
+        myDebugEvent.body = OutputEventBody()
+        myDebugEvent.body.category = DAPOutputEvent.OutputCategory.TELEMETRY
+        if (message is DAPEvent || message is DAPResponse) {
+            myDebugEvent.body.output = "---> "
         } else {
-            myDebugEvent.body.output = "<--- ";
+            myDebugEvent.body.output = "<--- "
         }
-
         try {
-            myDebugEvent.body.output += myObjectMapper.writeValueAsString(message);
-        } catch (JsonProcessingException e) {
-            myDebugEvent.body.output += message;
+            myDebugEvent.body.output += myObjectMapper.writeValueAsString(message)
+        } catch (e: JsonProcessingException) {
+            myDebugEvent.body.output += message
         }
-
-        return myDebugEvent;
+        return myDebugEvent
     }
 
-
-    public Promise<List<Boolean>> whenPreviousEventsProcessed(int receive_sequence) {
-        List<AsyncPromise<Boolean>> prevActiveEvents = new ArrayList<>();
-        synchronized (myActiveEvents) {
-            for (final Map.Entry<Integer, AsyncPromise<Boolean>> entry : myActiveEvents.entrySet()) {
-                if(receive_sequence > entry.getKey()) prevActiveEvents.add(entry.getValue());
+    fun whenPreviousEventsProcessed(receive_sequence: Int): Promise<List<Boolean>> {
+        val prevActiveEvents: MutableList<AsyncPromise<Boolean>> = ArrayList()
+        synchronized(myActiveEvents) {
+            for ((key, value) in myActiveEvents) {
+                if (receive_sequence > key) prevActiveEvents.add(value)
             }
         }
-
-        return collectResults(prevActiveEvents);
+        return prevActiveEvents.collectResults()
     }
 
-    protected void processEvent(DAPEvent event) {
-        DAPEventNames eventNames = event.getEventId();
-
+    protected fun processEvent(event: DAPEvent) {
+        val eventNames = event.eventId
         if (eventNames != null) {
-            Consumer<DAPEvent> consumer = eventHandlers.get(eventNames);
+            val consumer = eventHandlers[eventNames]
             if (consumer != null) {
                 try {
-                    consumer.accept(event);
-                } catch (Throwable e) {
-                    logger.error("Encountered exception while processing event "+event, e);
+                    consumer.accept(event)
+                } catch (e: Throwable) {
+                    logger.error("Encountered exception while processing event $event", e)
                 }
-            }
-            else logger.info("Received unhandled "+event);
+            } else logger.info("Received unhandled $event")
         }
-        synchronized (myActiveEvents) {
-            AsyncPromise<Boolean> prom = myActiveEvents.remove(event.sequence);
-            prom.setResult(Boolean.TRUE);
+        synchronized(myActiveEvents) {
+            val prom = myActiveEvents.remove(event.sequence)!!
+            prom.setResult(java.lang.Boolean.TRUE)
         }
     }
 
-    protected void processResponse(@NotNull DAPResponse response,
-                                   @Async.Execute @NotNull Integer sequence) {
-        AsyncPromise<DAPResponse> promise = openPromises.remove(sequence);
-        if(promise != null) {
-            if (response.success) promise.setResult(response);
-            else if ("cancelled".equals(response.message)) promise.cancel();
-            else {
+    protected fun processResponse(
+        response: DAPResponse,
+        @Async.Execute sequence: Int
+    ) {
+        val promise = openPromises.remove(sequence)
+        if (promise != null) {
+            if (response.success) promise.setResult(response) else if ("cancelled" == response.message) promise.cancel() else {
                 try {
-                    logger.warn(new ObjectMapper().writeValueAsString(response));
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
+                    logger.warn(ObjectMapper().writeValueAsString(response))
+                } catch (e: JsonProcessingException) {
+                    throw RuntimeException(e)
                 }
-                promise.setError(response.message);
+                promise.setError(response.message!!)
             }
         } else {
-            logger.info("Received unhandled "+response);
+            logger.info("Received unhandled $response")
         }
     }
 
-    protected void scheduleProcessing(DAPProtocolMessage message) {
-        lastMessages.add(message);
-        printMessageDebug(message);
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            if(message instanceof final DAPResponse response) {
-                processResponse(response, response.request_sequence);
-            } else if (message instanceof DAPEvent) {
-                synchronized (myActiveEvents) {
-                    myActiveEvents.put(message.sequence, new AsyncPromise<>());
-                }
-
-                processEvent((DAPEvent) message);
+    protected fun scheduleProcessing(message: DAPProtocolMessage) {
+        lastMessages.add(message)
+        printMessageDebug(message)
+        ApplicationManager.getApplication().executeOnPooledThread {
+            if (message is DAPResponse) {
+                processResponse(message, message.requestSequence)
+            } else if (message is DAPEvent) {
+                synchronized(myActiveEvents) { myActiveEvents.put(message.sequence, AsyncPromise()) }
+                processEvent(message)
             } else {
-                logger.info("Unknown DAP message: " + message);
+                logger.info("Unknown DAP message: $message")
                 // TODO
             }
-        });
-    }
-    public void setCancelRequest(final boolean cancelRequestEnabled) {
-        this.myCancelRequestEnabled = cancelRequestEnabled;
-    }
-
-    @Override
-    public void startNotified(@NotNull ProcessEvent event) {
-
-    }
-
-    @Override
-    public void processTerminated(@NotNull ProcessEvent event) {
-
-    }
-
-    @Override
-    public void onTextAvailable(@NotNull final ProcessEvent event, @NotNull final Key outputType) {
-        String text = event.getText();
-        lastMessages.add(text);
-
-        List<DAPProtocolMessage> myNewMessages = myDAPParser.parse(text);
-
-        for (final DAPProtocolMessage message : myNewMessages) {
-            this.scheduleProcessing(message);
         }
     }
-    public boolean wasTerminationRequested() {
-        return requestedTermination;
+
+    fun setCancelRequest(cancelRequestEnabled: Boolean) {
+        myCancelRequestEnabled = cancelRequestEnabled
     }
 
-    public String getLastReceivedMessage() {
-        Iterator it = this.lastMessages.iterator();
-        for(int i=0; i<this.lastMessages.size()-1; i++) {
-            it.next();
+    override fun startNotified(event: ProcessEvent) {}
+    override fun processTerminated(event: ProcessEvent) {}
+    override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {
+        val text = event.text
+        lastMessages.add(text)
+        val myNewMessages = myDAPParser.parse(text)
+        for (message in myNewMessages) {
+            scheduleProcessing(message)
+        }
+    }
+
+    fun wasTerminationRequested(): Boolean {
+        return requestedTermination
+    }
+
+    val lastReceivedMessage: String
+        get() {
+            val it: Iterator<*> = lastMessages.iterator()
+            for (i in 0 until lastMessages.size - 1) {
+                it.next()
+            }
+            return if (it.hasNext()) it.next().toString() else ""
         }
 
-        return it.hasNext() ? String.valueOf(it.next()) : "";
-    }
-
-    public void setTerminating() {
-        this.requestedTermination = true;
+    fun setTerminating() {
+        requestedTermination = true
     }
 }

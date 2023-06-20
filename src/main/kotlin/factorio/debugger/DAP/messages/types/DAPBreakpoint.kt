@@ -1,42 +1,45 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPBreakpoint extends DAPAdditionalProperties {
+class DAPBreakpoint : DAPAdditionalProperties() {
     /**
      * The identifier for the breakpoint. It is needed if breakpoint events are
      * used to update or remove breakpoints.
      */
+    @JvmField
     @JsonProperty("id")
-    public Integer id;
+    var id: Int? = null
 
     /**
      * If true, the breakpoint could be set (but not necessarily at the desired
      * location).
      */
+    @JvmField
     @JsonProperty("verified")
-    public boolean verified;
+    var verified = false
 
     /**
      * A message about the state of the breakpoint.
      * This is shown to the user and can be used to explain why a breakpoint could
      * not be verified.
      */
+    @JvmField
     @JsonProperty("message")
-    public String message;
+    var message: String? = null
 
     /**
      * The source where the breakpoint is located.
      */
     @JsonProperty("source")
-    public DAPSource source;
+    var source: DAPSource? = null
 
     /**
      * The start line of the actual range covered by the breakpoint.
      */
     @JsonProperty("line")
-    public Integer line;
+    var line: Int? = null
 
     /**
      * Start position of the source range covered by the breakpoint. It is
@@ -44,13 +47,13 @@ public class DAPBreakpoint extends DAPAdditionalProperties {
      * determines whether it is 0- or 1-based.
      */
     @JsonProperty("column")
-    public Integer column;
+    var column: Int? = null
 
     /**
      * The end line of the actual range covered by the breakpoint.
      */
     @JsonProperty("endLine")
-    public Integer endLine;
+    var endLine: Int? = null
 
     /**
      * End position of the source range covered by the breakpoint. It is measured
@@ -60,18 +63,18 @@ public class DAPBreakpoint extends DAPAdditionalProperties {
      * line.
      */
     @JsonProperty("endColumn")
-    public Integer endColumn;
+    var endColumn: Int? = null
 
     /**
      * A memory reference to where the breakpoint is set.
      */
     @JsonProperty("instructionReference")
-    public String instructionReference;
+    var instructionReference: String? = null
 
     /**
      * The offset from the instruction reference.
      * This can be negative.
      */
     @JsonProperty("offset")
-    public Integer offset;
+    var offset: Int? = null
 }

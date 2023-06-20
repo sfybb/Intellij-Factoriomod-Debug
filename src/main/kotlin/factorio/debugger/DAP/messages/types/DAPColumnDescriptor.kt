@@ -1,36 +1,36 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPColumnDescriptor extends DAPAdditionalProperties {
+class DAPColumnDescriptor : DAPAdditionalProperties() {
     /**
      * Name of the attribute rendered in this column.
      */
     @JsonProperty("attributeName")
-    public String attributeName;
+    lateinit var attributeName: String
 
     /**
      * Header UI label of column.
      */
     @JsonProperty("label")
-    public String label;
+    lateinit var label: String
 
     /**
      * Format to use for the rendered values in this column. TBD how the format
      * strings looks like.
      */
     @JsonProperty("format")
-    public String format;
+    var format: String? = null
 
     /**
      * Datatype of values in this column. Defaults to `string` if not specified.
      * Values: 'string', 'number', 'boolean', 'unixTimestampUTC'
      */
     @JsonProperty("type")
-    public ColumnTypes type;
+    var type: ColumnTypes? = null
 
-    enum ColumnTypes {
+    enum class ColumnTypes {
         @JsonProperty("string")
         STRING,
         @JsonProperty("number")
@@ -45,5 +45,5 @@ public class DAPColumnDescriptor extends DAPAdditionalProperties {
      * Width of this column in characters (hint only).
      */
     @JsonProperty("width")
-    public int width;
+    var width = 0
 }

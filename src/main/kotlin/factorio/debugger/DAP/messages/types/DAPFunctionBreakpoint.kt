@@ -1,14 +1,14 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPFunctionBreakpoint extends DAPAdditionalProperties {
+class DAPFunctionBreakpoint : DAPAdditionalProperties() {
     /**
      * The name of the function.
      */
     @JsonProperty("name")
-    public String name;
+    lateinit var name: String
 
     /**
      * An expression for conditional breakpoints.
@@ -16,7 +16,7 @@ public class DAPFunctionBreakpoint extends DAPAdditionalProperties {
      * `supportsConditionalBreakpoints` is true.
      */
     @JsonProperty("condition")
-    public String condition;
+    var condition: String? = null
 
     /**
      * An expression that controls how many hits of the breakpoint are ignored.
@@ -25,5 +25,5 @@ public class DAPFunctionBreakpoint extends DAPAdditionalProperties {
      * capability `supportsHitConditionalBreakpoints` is true.
      */
     @JsonProperty("hitCondition")
-    public String hitCondition;
+    var hitCondition: String? = null
 }

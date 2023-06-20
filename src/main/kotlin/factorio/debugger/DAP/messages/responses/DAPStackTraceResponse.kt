@@ -1,23 +1,23 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPStackFrame;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPStackFrame
 
 @JsonTypeName("stackTrace")
-public class DAPStackTraceResponse extends DAPResponse {
+class DAPStackTraceResponse : DAPResponse() {
     @JsonProperty("body")
-    public StackTraceBody body;
-    public static class StackTraceBody extends DAPAdditionalProperties {
+    lateinit var body: StackTraceBody
+
+    class StackTraceBody : DAPAdditionalProperties() {
         /**
          * The frames of the stack frame. If the array has length zero, there are no
          * stack frames available.
          * This means that there is no location information available.
          */
         @JsonProperty("stackFrames")
-        public DAPStackFrame[] stackFrames;
+        lateinit var stackFrames: Array<DAPStackFrame>
 
         /**
          * The total number of frames available in the stack. If omitted or if
@@ -28,11 +28,10 @@ public class DAPStackTraceResponse extends DAPResponse {
          * enforce paging in the client.
          */
         @JsonProperty("totalFrames")
-        public Integer totalFrames;
+        var totalFrames: Int? = null
     }
 
-    @Override
-    public String toString() {
-        return "Response: StackTrace ("+ body.totalFrames +")";
+    override fun toString(): String {
+        return "Response: StackTrace (" + body.totalFrames + ")"
     }
 }

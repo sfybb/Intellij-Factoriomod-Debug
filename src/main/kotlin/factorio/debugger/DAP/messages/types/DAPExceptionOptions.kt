@@ -1,9 +1,9 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPExceptionOptions extends DAPAdditionalProperties {
+class DAPExceptionOptions : DAPAdditionalProperties() {
     /**
      * A path that selects a single or multiple exceptions in a tree. If `path` is
      * missing, the whole tree is selected.
@@ -11,11 +11,11 @@ public class DAPExceptionOptions extends DAPAdditionalProperties {
      * group exceptions in the UI.
      */
     @JsonProperty("path")
-    public DAPExceptionPathSegment[] path;
+    var path: Array<DAPExceptionPathSegment> = arrayOf()
 
     /**
      * Condition when a thrown exception should result in a break.
      */
     @JsonProperty("breakMode")
-    public DAPExceptionBreakMode breakMode;
+    lateinit var breakMode: DAPExceptionBreakMode
 }

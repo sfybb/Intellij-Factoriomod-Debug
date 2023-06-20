@@ -1,15 +1,15 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPScope extends DAPAdditionalProperties {
+class DAPScope : DAPAdditionalProperties() {
     /**
      * Name of the scope such as 'Arguments', 'Locals', or 'Registers'. This
      * string is shown in the UI as is and can be translated.
      */
     @JsonProperty("name")
-    public String name;
+    lateinit var name: String
 
     /**
      * A hint for how to present this scope in the UI. If this attribute is
@@ -22,8 +22,9 @@ public class DAPScope extends DAPAdditionalProperties {
      * etc.
      */
     // 'arguments' | 'locals' | 'registers' | string
+    @JvmField
     @JsonProperty("presentationHint")
-    public String presentationHint;
+    var presentationHint: String? = null
 
     /**
      * The variables of this scope can be retrieved by passing the value of
@@ -31,8 +32,9 @@ public class DAPScope extends DAPAdditionalProperties {
      * remains suspended. See 'Lifetime of Object References' in the Overview
      * section for details.
      */
+    @JvmField
     @JsonProperty("variablesReference")
-    public int variablesReference;
+    var variablesReference = 0
 
     /**
      * The number of named variables in this scope.
@@ -40,7 +42,7 @@ public class DAPScope extends DAPAdditionalProperties {
      * and fetch them in chunks.
      */
     @JsonProperty("namedVariables")
-    public Integer namedVariables;
+    var namedVariables: Int? = null
 
     /**
      * The number of indexed variables in this scope.
@@ -48,26 +50,27 @@ public class DAPScope extends DAPAdditionalProperties {
      * and fetch them in chunks.
      */
     @JsonProperty("indexedVariables")
-    public Integer indexedVariables;
+    var indexedVariables: Int? = null
 
     /**
      * If true, the number of variables in this scope is large or expensive to
      * retrieve.
      */
     @JsonProperty("expensive")
-    public boolean expensive;
+    var expensive: Boolean = false
 
     /**
      * The source for this scope.
      */
     @JsonProperty("source")
-    public DAPSource source;
+    var source: DAPSource? = null
 
     /**
      * The start line of the range covered by this scope.
      */
+    @JvmField
     @JsonProperty("line")
-    public Integer line;
+    var line: Int? = null
 
     /**
      * Start position of the range covered by the scope. It is measured in UTF-16
@@ -75,13 +78,13 @@ public class DAPScope extends DAPAdditionalProperties {
      * it is 0- or 1-based.
      */
     @JsonProperty("column")
-    public Integer column;
+    var column: Int? = null
 
     /**
      * The end line of the range covered by this scope.
      */
     @JsonProperty("endLine")
-    public Integer endLine;
+    var endLine: Int? = null
 
     /**
      * End position of the range covered by the scope. It is measured in UTF-16
@@ -89,5 +92,5 @@ public class DAPScope extends DAPAdditionalProperties {
      * it is 0- or 1-based.
      */
     @JsonProperty("endColumn")
-    public Integer endColumn;
+    var endColumn: Int? = null
 }

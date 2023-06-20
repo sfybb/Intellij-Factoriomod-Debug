@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.concurrency.Promise;
 import com.intellij.xdebugger.frame.XExecutionStack;
 import com.intellij.xdebugger.frame.XSuspendContext;
-import factorio.debugger.DAP.messages.response.DAPStackTraceResponse;
+import factorio.debugger.DAP.messages.responses.DAPStackTraceResponse;
 import factorio.debugger.DAP.messages.types.DAPThread;
 import factorio.debugger.frames.FactorioExecutionStack;
 import kotlin.Pair;

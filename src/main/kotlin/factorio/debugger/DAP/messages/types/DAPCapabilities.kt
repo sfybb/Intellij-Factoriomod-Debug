@@ -1,153 +1,149 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import java.util.Collection;
-import java.util.HashSet;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPCapabilities extends DAPAdditionalProperties {
-    public final static DAPCapabilities EMPTY_CAPABILITES = new DAPCapabilities();
-
-    public boolean has(DAPCapabilitiesEnum capability) {
-        return switch (capability) {
-            case ConfigurationDoneRequest -> supportsConfigurationDoneRequest;
-            case FunctionBreakpoints -> supportsFunctionBreakpoints;
-            case ConditionalBreakpoints -> supportsConditionalBreakpoints;
-            case HitConditionalBreakpoints -> supportsHitConditionalBreakpoints;
-            case EvaluateForHovers -> supportsEvaluateForHovers;
-            case StepBack -> supportsStepBack;
-            case SetVariable -> supportsSetVariable;
-            case RestartFrame -> supportsRestartFrame;
-            case GotoTargetsRequest -> supportsGotoTargetsRequest;
-            case StepInTargetsRequest -> supportsStepInTargetsRequest;
-            case CompletionsRequest -> supportsCompletionsRequest;
-            case ModulesRequest -> supportsModulesRequest;
-            case RestartRequest -> supportsRestartRequest;
-            case ExceptionOptions -> supportsExceptionOptions;
-            case ValueFormattingOptions -> supportsValueFormattingOptions;
-            case ExceptionInfoRequest -> supportsExceptionInfoRequest;
-            case TerminateDebuggee -> supportTerminateDebuggee;
-            case SuspendDebuggee -> supportSuspendDebuggee;
-            case DelayedStackTraceLoading -> supportsDelayedStackTraceLoading;
-            case LoadedSourcesRequest -> supportsLoadedSourcesRequest;
-            case LogPoints -> supportsLogPoints;
-            case TerminateThreadsRequest -> supportsTerminateThreadsRequest;
-            case SetExpression -> supportsSetExpression;
-            case TerminateRequest -> supportsTerminateRequest;
-            case DataBreakpoints -> supportsDataBreakpoints;
-            case ReadMemoryRequest -> supportsReadMemoryRequest;
-            case WriteMemoryRequest -> supportsWriteMemoryRequest;
-            case DisassembleRequest -> supportsDisassembleRequest;
-            case CancelRequest -> supportsCancelRequest;
-            case BreakpointLocationsRequest -> supportsBreakpointLocationsRequest;
-            case ClipboardContext -> supportsClipboardContext;
-            case SteppingGranularity -> supportsSteppingGranularity;
-            case InstructionBreakpoints -> supportsInstructionBreakpoints;
-            case ExceptionFilterOptions -> supportsExceptionFilterOptions;
-            case SingleThreadExecutionRequests -> supportsSingleThreadExecutionRequests;
-        };
+class DAPCapabilities : DAPAdditionalProperties() {
+    fun has(capability: DAPCapabilitiesEnum): Boolean {
+        return when (capability) {
+            DAPCapabilitiesEnum.ConfigurationDoneRequest -> supportsConfigurationDoneRequest
+            DAPCapabilitiesEnum.FunctionBreakpoints -> supportsFunctionBreakpoints
+            DAPCapabilitiesEnum.ConditionalBreakpoints -> supportsConditionalBreakpoints
+            DAPCapabilitiesEnum.HitConditionalBreakpoints -> supportsHitConditionalBreakpoints
+            DAPCapabilitiesEnum.EvaluateForHovers -> supportsEvaluateForHovers
+            DAPCapabilitiesEnum.StepBack -> supportsStepBack
+            DAPCapabilitiesEnum.SetVariable -> supportsSetVariable
+            DAPCapabilitiesEnum.RestartFrame -> supportsRestartFrame
+            DAPCapabilitiesEnum.GotoTargetsRequest -> supportsGotoTargetsRequest
+            DAPCapabilitiesEnum.StepInTargetsRequest -> supportsStepInTargetsRequest
+            DAPCapabilitiesEnum.CompletionsRequest -> supportsCompletionsRequest
+            DAPCapabilitiesEnum.ModulesRequest -> supportsModulesRequest
+            DAPCapabilitiesEnum.RestartRequest -> supportsRestartRequest
+            DAPCapabilitiesEnum.ExceptionOptions -> supportsExceptionOptions
+            DAPCapabilitiesEnum.ValueFormattingOptions -> supportsValueFormattingOptions
+            DAPCapabilitiesEnum.ExceptionInfoRequest -> supportsExceptionInfoRequest
+            DAPCapabilitiesEnum.TerminateDebuggee -> supportTerminateDebuggee
+            DAPCapabilitiesEnum.SuspendDebuggee -> supportSuspendDebuggee
+            DAPCapabilitiesEnum.DelayedStackTraceLoading -> supportsDelayedStackTraceLoading
+            DAPCapabilitiesEnum.LoadedSourcesRequest -> supportsLoadedSourcesRequest
+            DAPCapabilitiesEnum.LogPoints -> supportsLogPoints
+            DAPCapabilitiesEnum.TerminateThreadsRequest -> supportsTerminateThreadsRequest
+            DAPCapabilitiesEnum.SetExpression -> supportsSetExpression
+            DAPCapabilitiesEnum.TerminateRequest -> supportsTerminateRequest
+            DAPCapabilitiesEnum.DataBreakpoints -> supportsDataBreakpoints
+            DAPCapabilitiesEnum.ReadMemoryRequest -> supportsReadMemoryRequest
+            DAPCapabilitiesEnum.WriteMemoryRequest -> supportsWriteMemoryRequest
+            DAPCapabilitiesEnum.DisassembleRequest -> supportsDisassembleRequest
+            DAPCapabilitiesEnum.CancelRequest -> supportsCancelRequest
+            DAPCapabilitiesEnum.BreakpointLocationsRequest -> supportsBreakpointLocationsRequest
+            DAPCapabilitiesEnum.ClipboardContext -> supportsClipboardContext
+            DAPCapabilitiesEnum.SteppingGranularity -> supportsSteppingGranularity
+            DAPCapabilitiesEnum.InstructionBreakpoints -> supportsInstructionBreakpoints
+            DAPCapabilitiesEnum.ExceptionFilterOptions -> supportsExceptionFilterOptions
+            DAPCapabilitiesEnum.SingleThreadExecutionRequests -> supportsSingleThreadExecutionRequests
+        }
     }
 
     /**
      * The debug adapter supports the `configurationDone` request.
      */
     @JsonProperty("supportsConfigurationDoneRequest")
-    public boolean supportsConfigurationDoneRequest;
+    var supportsConfigurationDoneRequest = false
 
     /**
      * The debug adapter supports function breakpoints.
      */
     @JsonProperty("supportsFunctionBreakpoints")
-    public boolean supportsFunctionBreakpoints;
+    var supportsFunctionBreakpoints = false
 
     /**
      * The debug adapter supports conditional breakpoints.
      */
     @JsonProperty("supportsConditionalBreakpoints")
-    public boolean supportsConditionalBreakpoints;
+    var supportsConditionalBreakpoints = false
 
     /**
      * The debug adapter supports breakpoints that break execution after a
      * specified number of hits.
      */
     @JsonProperty("supportsHitConditionalBreakpoints")
-    public boolean supportsHitConditionalBreakpoints;
+    var supportsHitConditionalBreakpoints = false
 
     /**
      * The debug adapter supports a (side effect free) `evaluate` request for data
      * hovers.
      */
     @JsonProperty("supportsEvaluateForHovers")
-    public boolean supportsEvaluateForHovers;
+    var supportsEvaluateForHovers = false
 
     /**
      * Available exception filter options for the `setExceptionBreakpoints`
      * request.
      */
     @JsonProperty("exceptionBreakpointFilters")
-    public DAPExceptionBreakpointsFilter[] exceptionBreakpointFilters;
+    var exceptionBreakpointFilters: Array<DAPExceptionBreakpointsFilter> = arrayOf()
 
     /**
      * The debug adapter supports stepping back via the `stepBack` and
      * `reverseContinue` requests.
      */
     @JsonProperty("supportsStepBack")
-    public boolean supportsStepBack;
+    var supportsStepBack = false
 
     /**
      * The debug adapter supports setting a variable to a value.
      */
     @JsonProperty("supportsSetVariable")
-    public boolean supportsSetVariable;
+    var supportsSetVariable = false
 
     /**
      * The debug adapter supports restarting a frame.
      */
     @JsonProperty("supportsRestartFrame")
-    public boolean supportsRestartFrame;
+    var supportsRestartFrame = false
 
     /**
      * The debug adapter supports the `gotoTargets` request.
      */
     @JsonProperty("supportsGotoTargetsRequest")
-    public boolean supportsGotoTargetsRequest;
+    var supportsGotoTargetsRequest = false
 
     /**
      * The debug adapter supports the `stepInTargets` request.
      */
     @JsonProperty("supportsStepInTargetsRequest")
-    public boolean supportsStepInTargetsRequest;
+    var supportsStepInTargetsRequest = false
 
     /**
      * The debug adapter supports the `completions` request.
      */
     @JsonProperty("supportsCompletionsRequest")
-    public boolean supportsCompletionsRequest;
+    var supportsCompletionsRequest = false
 
     /**
      * The set of characters that should trigger completion in a REPL. If not
      * specified, the UI should assume the `.` character.
      */
     @JsonProperty("completionTriggerCharacters")
-    public String[] completionTriggerCharacters;
+    var completionTriggerCharacters: Array<String> = arrayOf(".")
 
     /**
      * The debug adapter supports the `modules` request.
      */
     @JsonProperty("supportsModulesRequest")
-    public boolean supportsModulesRequest;
+    var supportsModulesRequest = false
 
     /**
      * The set of additional module information exposed by the debug adapter.
      */
     @JsonProperty("additionalModuleColumns")
-    public DAPColumnDescriptor[] additionalModuleColumns;
+    var additionalModuleColumns: Array<DAPColumnDescriptor> = arrayOf()
 
     /**
      * Checksum algorithms supported by the debug adapter.
      */
     @JsonProperty("supportedChecksumAlgorithms")
-    public DAPChecksum.ChecksumAlgorithm[] supportedChecksumAlgorithms;
+    var supportedChecksumAlgorithms: Array<DAPChecksum.ChecksumAlgorithm> = arrayOf()
 
     /**
      * The debug adapter supports the `restart` request. In this case a client
@@ -155,41 +151,41 @@ public class DAPCapabilities extends DAPAdditionalProperties {
      * but by calling the `restart` request.
      */
     @JsonProperty("supportsRestartRequest")
-    public boolean supportsRestartRequest;
+    var supportsRestartRequest = false
 
     /**
      * The debug adapter supports `exceptionOptions` on the
      * `setExceptionBreakpoints` request.
      */
     @JsonProperty("supportsExceptionOptions")
-    public boolean supportsExceptionOptions;
+    var supportsExceptionOptions = false
 
     /**
      * The debug adapter supports a `format` attribute on the `stackTrace`,
      * `variables`, and `evaluate` requests.
      */
     @JsonProperty("supportsValueFormattingOptions")
-    public boolean supportsValueFormattingOptions;
+    var supportsValueFormattingOptions = false
 
     /**
      * The debug adapter supports the `exceptionInfo` request.
      */
     @JsonProperty("supportsExceptionInfoRequest")
-    public boolean supportsExceptionInfoRequest;
+    var supportsExceptionInfoRequest = false
 
     /**
      * The debug adapter supports the `terminateDebuggee` attribute on the
      * `disconnect` request.
      */
     @JsonProperty("supportTerminateDebuggee")
-    public boolean supportTerminateDebuggee;
+    var supportTerminateDebuggee = false
 
     /**
      * The debug adapter supports the `suspendDebuggee` attribute on the
      * `disconnect` request.
      */
     @JsonProperty("supportSuspendDebuggee")
-    public boolean supportSuspendDebuggee;
+    var supportSuspendDebuggee = false
 
     /**
      * The debug adapter supports the delayed loading of parts of the stack, which
@@ -197,102 +193,102 @@ public class DAPCapabilities extends DAPAdditionalProperties {
      * `totalFrames` result of the `stackTrace` request are supported.
      */
     @JsonProperty("supportsDelayedStackTraceLoading")
-    public boolean supportsDelayedStackTraceLoading;
+    var supportsDelayedStackTraceLoading = false
 
     /**
      * The debug adapter supports the `loadedSources` request.
      */
     @JsonProperty("supportsLoadedSourcesRequest")
-    public boolean supportsLoadedSourcesRequest;
+    var supportsLoadedSourcesRequest = false
 
     /**
      * The debug adapter supports log points by interpreting the `logMessage`
      * attribute of the `SourceBreakpoint`.
      */
     @JsonProperty("supportsLogPoints")
-    public boolean supportsLogPoints;
+    var supportsLogPoints = false
 
     /**
      * The debug adapter supports the `terminateThreads` request.
      */
     @JsonProperty("supportsTerminateThreadsRequest")
-    public boolean supportsTerminateThreadsRequest;
+    var supportsTerminateThreadsRequest = false
 
     /**
      * The debug adapter supports the `setExpression` request.
      */
     @JsonProperty("supportsSetExpression")
-    public boolean supportsSetExpression;
+    var supportsSetExpression = false
 
     /**
      * The debug adapter supports the `terminate` request.
      */
     @JsonProperty("supportsTerminateRequest")
-    public boolean supportsTerminateRequest;
+    var supportsTerminateRequest = false
 
     /**
      * The debug adapter supports data breakpoints.
      */
     @JsonProperty("supportsDataBreakpoints")
-    public boolean supportsDataBreakpoints;
+    var supportsDataBreakpoints = false
 
     /**
      * The debug adapter supports the `readMemory` request.
      */
     @JsonProperty("supportsReadMemoryRequest")
-    public boolean supportsReadMemoryRequest;
+    var supportsReadMemoryRequest = false
 
     /**
      * The debug adapter supports the `writeMemory` request.
      */
     @JsonProperty("supportsWriteMemoryRequest")
-    public boolean supportsWriteMemoryRequest;
+    var supportsWriteMemoryRequest = false
 
     /**
      * The debug adapter supports the `disassemble` request.
      */
     @JsonProperty("supportsDisassembleRequest")
-    public boolean supportsDisassembleRequest;
+    var supportsDisassembleRequest = false
 
     /**
      * The debug adapter supports the `cancel` request.
      */
     @JsonProperty("supportsCancelRequest")
-    public boolean supportsCancelRequest;
+    var supportsCancelRequest = false
 
     /**
      * The debug adapter supports the `breakpointLocations` request.
      */
     @JsonProperty("supportsBreakpointLocationsRequest")
-    public boolean supportsBreakpointLocationsRequest;
+    var supportsBreakpointLocationsRequest = false
 
     /**
      * The debug adapter supports the `clipboard` context value in the `evaluate`
      * request.
      */
     @JsonProperty("supportsClipboardContext")
-    public boolean supportsClipboardContext;
+    var supportsClipboardContext = false
 
     /**
      * The debug adapter supports stepping granularities (argument `granularity`)
      * for the stepping requests.
      */
     @JsonProperty("supportsSteppingGranularity")
-    public boolean supportsSteppingGranularity;
+    var supportsSteppingGranularity = false
 
     /**
      * The debug adapter supports adding breakpoints based on instruction
      * references.
      */
     @JsonProperty("supportsInstructionBreakpoints")
-    public boolean supportsInstructionBreakpoints;
+    var supportsInstructionBreakpoints = false
 
     /**
      * The debug adapter supports `filterOptions` as an argument on the
      * `setExceptionBreakpoints` request.
      */
     @JsonProperty("supportsExceptionFilterOptions")
-    public boolean supportsExceptionFilterOptions;
+    var supportsExceptionFilterOptions = false
 
     /**
      * The debug adapter supports the `singleThread` property on the execution
@@ -300,21 +296,19 @@ public class DAPCapabilities extends DAPAdditionalProperties {
      * `stepBack`).
      */
     @JsonProperty("supportsSingleThreadExecutionRequests")
-    public boolean supportsSingleThreadExecutionRequests;
+    var supportsSingleThreadExecutionRequests = false
 
-    public DAPCapabilities() {
-        this.exceptionBreakpointFilters = new DAPExceptionBreakpointsFilter[0];
-        this.completionTriggerCharacters = new String[0];
-        this.additionalModuleColumns = new DAPColumnDescriptor[0];
-        this.supportedChecksumAlgorithms = new DAPChecksum.ChecksumAlgorithm[0];
-
-    }
-
-    public Collection<DAPCapabilitiesEnum> getCapabilities() {
-        Collection<DAPCapabilitiesEnum> result = new HashSet<>();
-        for (final DAPCapabilitiesEnum value : DAPCapabilitiesEnum.values()) {
-            if(this.has(value)) result.add(value);
+    val capabilities: Collection<DAPCapabilitiesEnum>
+        get() {
+            val result: MutableCollection<DAPCapabilitiesEnum> = HashSet()
+            for (value in DAPCapabilitiesEnum.values()) {
+                if (has(value)) result.add(value)
+            }
+            return result
         }
-        return result;
+
+    companion object {
+        @JvmField
+        val EMPTY_CAPABILITIES = DAPCapabilities()
     }
 }

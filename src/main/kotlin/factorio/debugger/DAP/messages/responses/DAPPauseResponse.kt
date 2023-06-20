@@ -1,12 +1,6 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPResponse;
+import com.fasterxml.jackson.annotation.JsonTypeName
 
 @JsonTypeName("pause")
-public class DAPPauseResponse extends DAPResponse {
-    @Override
-    public String toString() {
-        return "Response: pause";
-    }
-}
+class DAPPauseResponse : DAPResponse()

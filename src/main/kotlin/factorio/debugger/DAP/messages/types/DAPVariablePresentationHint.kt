@@ -1,9 +1,9 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPVariablePresentationHint extends DAPAdditionalProperties {
+class DAPVariablePresentationHint : DAPAdditionalProperties() {
     /**
      * The kind of variable. Before introducing additional values, try to use the
      * listed values.
@@ -29,7 +29,7 @@ public class DAPVariablePresentationHint extends DAPAdditionalProperties {
     //        | 'innerClass' | 'interface' | 'mostDerivedClass' | 'virtual'
     //        | 'dataBreakpoint' | string
     @JsonProperty("kind")
-    public String kind;
+    var kind: String? = null
 
     /**
      * Set of attributes represented as an array of strings. Before introducing
@@ -51,7 +51,7 @@ public class DAPVariablePresentationHint extends DAPAdditionalProperties {
     // ('static' | 'constant' | 'readOnly' | 'rawString' | 'hasObjectId'
     //        | 'canHaveObjectId' | 'hasSideEffects' | 'hasDataBreakpoint' | string)[]
     @JsonProperty("attributes")
-    public String[] attributes;
+    var attributes: Array<String> = arrayOf()
 
     /**
      * Visibility of variable. Before introducing additional values, try to use
@@ -60,7 +60,7 @@ public class DAPVariablePresentationHint extends DAPAdditionalProperties {
      */
     //  'public' | 'private' | 'protected' | 'internal' | 'final' | string
     @JsonProperty("visibility")
-    public String visibility;
+    var visibility: String? = null
 
     /**
      * If true, clients can present the variable with a UI that supports a
@@ -74,5 +74,5 @@ public class DAPVariablePresentationHint extends DAPAdditionalProperties {
      * the value through another `variable` request.
      */
     @JsonProperty("lazy")
-    public Boolean lazy;
+    var lazy: Boolean? = null
 }

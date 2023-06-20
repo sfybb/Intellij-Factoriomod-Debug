@@ -1,9 +1,9 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPInstructionBreakpoint extends DAPAdditionalProperties {
+class DAPInstructionBreakpoint : DAPAdditionalProperties() {
     /**
      * The instruction reference of the breakpoint.
      * This should be a memory or instruction pointer reference from an
@@ -11,14 +11,14 @@ public class DAPInstructionBreakpoint extends DAPAdditionalProperties {
      * `Breakpoint`.
      */
     @JsonProperty("instructionReference")
-    public String instructionReference;
+    lateinit var instructionReference: String
 
     /**
      * The offset from the instruction reference.
      * This can be negative.
      */
     @JsonProperty("offset")
-    public Integer offset;
+    var offset: Int? = null
 
     /**
      * An expression for conditional breakpoints.
@@ -26,7 +26,7 @@ public class DAPInstructionBreakpoint extends DAPAdditionalProperties {
      * `supportsConditionalBreakpoints` is true.
      */
     @JsonProperty("condition")
-    public String condition;
+    var condition: String? = null
 
     /**
      * An expression that controls how many hits of the breakpoint are ignored.
@@ -35,5 +35,5 @@ public class DAPInstructionBreakpoint extends DAPAdditionalProperties {
      * capability `supportsHitConditionalBreakpoints` is true.
      */
     @JsonProperty("hitCondition")
-    public String hitCondition;
+    var hitCondition: String? = null
 }

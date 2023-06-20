@@ -1,6 +1,6 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-public enum DAPCapabilitiesEnum {
+enum class DAPCapabilitiesEnum {
     ConfigurationDoneRequest,
     FunctionBreakpoints,
     ConditionalBreakpoints,
@@ -35,5 +35,5 @@ public enum DAPCapabilitiesEnum {
     SteppingGranularity,
     InstructionBreakpoints,
     ExceptionFilterOptions,
-    SingleThreadExecutionRequests;
+    SingleThreadExecutionRequests
 }

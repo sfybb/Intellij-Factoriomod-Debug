@@ -1,17 +1,15 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPCapabilities;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.types.DAPCapabilities
 
 @JsonTypeName("initialize")
-public class DAPInitializeResponse extends DAPResponse {
+class DAPInitializeResponse : DAPResponse() {
+    @JvmField
     @JsonProperty("body")
-    public DAPCapabilities body;
-
-    @Override
-    public String toString() {
-        return "Response: initialized";
+    var body: DAPCapabilities? = null
+    override fun toString(): String {
+        return "${super.toString()} Capabilities: ${body ?: "[]"}"
     }
 }

@@ -1,26 +1,25 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPScope;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPScope
 
 @JsonTypeName("scopes")
-public class DAPScopesResponse extends DAPResponse {
+class DAPScopesResponse : DAPResponse() {
     @JsonProperty("body")
-    public ScopesResponseBody body;
-    public static class ScopesResponseBody extends DAPAdditionalProperties {
+    lateinit var body: ScopesResponseBody
+
+    class ScopesResponseBody : DAPAdditionalProperties() {
         /**
          * The scopes of the stack frame. If the array has length zero, there are no
          * scopes available.
          */
         @JsonProperty("scopes")
-        public DAPScope[] scopes;
+        lateinit var scopes: Array<DAPScope>
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + ": #scopes: "+ body.scopes.length;
+    override fun toString(): String {
+        return "${super.toString()}: #scopes: ${body.scopes.size}"
     }
 }

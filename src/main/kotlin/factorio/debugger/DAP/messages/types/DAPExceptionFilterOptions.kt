@@ -1,15 +1,15 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPExceptionFilterOptions extends DAPAdditionalProperties {
+class DAPExceptionFilterOptions : DAPAdditionalProperties() {
     /**
      * ID of an exception filter returned by the `exceptionBreakpointFilters`
      * capability.
      */
     @JsonProperty("filterId")
-    public String filterId;
+    lateinit var filterId: String
 
     /**
      * An expression for conditional exceptions.
@@ -17,5 +17,5 @@ public class DAPExceptionFilterOptions extends DAPAdditionalProperties {
      * true.
      */
     @JsonProperty("condition")
-    public String condition;
+    var condition: String? = null
 }

@@ -1,12 +1,12 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPValueFormat extends DAPAdditionalProperties {
+class DAPValueFormat : DAPAdditionalProperties() {
     /**
      * Display the value in hex.
      */
     @JsonProperty("hex")
-    public Boolean hex;
+    var hex: Boolean? = null
 }

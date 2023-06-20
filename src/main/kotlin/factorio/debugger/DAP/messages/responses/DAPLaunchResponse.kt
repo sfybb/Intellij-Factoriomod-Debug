@@ -1,13 +1,6 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPResponse;
+import com.fasterxml.jackson.annotation.JsonTypeName
 
 @JsonTypeName("launch")
-public class DAPLaunchResponse extends DAPResponse {
-
-    @Override
-    public String toString() {
-        return "Response: launch";
-    }
-}
+class DAPLaunchResponse : DAPResponse()

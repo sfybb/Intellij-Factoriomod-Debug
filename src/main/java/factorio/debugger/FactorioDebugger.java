@@ -24,10 +24,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import factorio.debugger.DAP.DAPSocket;
-import factorio.debugger.DAP.messages.DAPEvent;
 import factorio.debugger.DAP.messages.DAPEventNames;
-import factorio.debugger.DAP.messages.DAPRequest;
-import factorio.debugger.DAP.messages.DAPResponse;
+import factorio.debugger.DAP.messages.events.DAPEvent;
 import factorio.debugger.DAP.messages.requests.DAPBreakpointLocationsRequest;
 import factorio.debugger.DAP.messages.requests.DAPCompletionsRequest;
 import factorio.debugger.DAP.messages.requests.DAPConfigurationDoneRequest;
@@ -37,6 +35,7 @@ import factorio.debugger.DAP.messages.requests.DAPInitializeRequest;
 import factorio.debugger.DAP.messages.requests.DAPLaunchRequest;
 import factorio.debugger.DAP.messages.requests.DAPNextRequest;
 import factorio.debugger.DAP.messages.requests.DAPPauseRequest;
+import factorio.debugger.DAP.messages.requests.DAPRequest;
 import factorio.debugger.DAP.messages.requests.DAPScopesRequest;
 import factorio.debugger.DAP.messages.requests.DAPSetBreakpointsRequest;
 import factorio.debugger.DAP.messages.requests.DAPSetExpressionRequest;
@@ -47,22 +46,24 @@ import factorio.debugger.DAP.messages.requests.DAPStepInTargetsRequest;
 import factorio.debugger.DAP.messages.requests.DAPTerminateRequest;
 import factorio.debugger.DAP.messages.requests.DAPThreadsRequest;
 import factorio.debugger.DAP.messages.requests.DAPVariablesRequest;
-import factorio.debugger.DAP.messages.response.DAPBreakpointLocationsResponse;
-import factorio.debugger.DAP.messages.response.DAPCompletionsResponse;
-import factorio.debugger.DAP.messages.response.DAPConfigurationDoneResponse;
-import factorio.debugger.DAP.messages.response.DAPEvaluateResponse;
-import factorio.debugger.DAP.messages.response.DAPInitializeResponse;
-import factorio.debugger.DAP.messages.response.DAPNextResponse;
-import factorio.debugger.DAP.messages.response.DAPScopesResponse;
-import factorio.debugger.DAP.messages.response.DAPSetBreakpointsResponse;
-import factorio.debugger.DAP.messages.response.DAPSetExpressionResponse;
-import factorio.debugger.DAP.messages.response.DAPSetVariableResponse;
-import factorio.debugger.DAP.messages.response.DAPStackTraceResponse;
-import factorio.debugger.DAP.messages.response.DAPStepInResponse;
-import factorio.debugger.DAP.messages.response.DAPStepInTargetsResponse;
-import factorio.debugger.DAP.messages.response.DAPTerminateResponse;
-import factorio.debugger.DAP.messages.response.DAPThreadsResponse;
-import factorio.debugger.DAP.messages.response.DAPVariablesResponse;
+import factorio.debugger.DAP.messages.responses.DAPBreakpointLocationsResponse;
+import factorio.debugger.DAP.messages.responses.DAPCompletionsResponse;
+import factorio.debugger.DAP.messages.responses.DAPConfigurationDoneResponse;
+import factorio.debugger.DAP.messages.responses.DAPEvaluateResponse;
+import factorio.debugger.DAP.messages.responses.DAPInitializeResponse;
+import factorio.debugger.DAP.messages.responses.DAPNextResponse;
+import factorio.debugger.DAP.messages.responses.DAPResponse;
+import factorio.debugger.DAP.messages.responses.DAPScopesResponse;
+import factorio.debugger.DAP.messages.responses.DAPSetBreakpointsResponse;
+import factorio.debugger.DAP.messages.responses.DAPSetExpressionResponse;
+import factorio.debugger.DAP.messages.responses.DAPSetVariableResponse;
+import factorio.debugger.DAP.messages.responses.DAPStackTraceResponse;
+import factorio.debugger.DAP.messages.responses.DAPStepInResponse;
+import factorio.debugger.DAP.messages.responses.DAPStepInTargetsResponse;
+import factorio.debugger.DAP.messages.responses.DAPTerminateResponse;
+import factorio.debugger.DAP.messages.responses.DAPThreadsResponse;
+import factorio.debugger.DAP.messages.responses.DAPVariablesResponse;
+import factorio.debugger.DAP.messages.types.DAPBreakpointLocation;
 import factorio.debugger.DAP.messages.types.DAPCapabilities;
 import factorio.debugger.DAP.messages.types.DAPCapabilitiesEnum;
 import factorio.debugger.DAP.messages.types.DAPScope;
@@ -71,16 +72,16 @@ import factorio.debugger.DAP.messages.types.DAPStackFrame;
 import factorio.debugger.DAP.messages.types.DAPSteppingGranularity;
 
 public class FactorioDebugger {
-    private Logger logger = Logger.getInstance(FactorioDebugger.class);
+    private final Logger logger = Logger.getInstance(FactorioDebugger.class);
     private final FactorioDebugProcess myFactorioDebugProcess;
     private final DAPSocket myDAPSocket;
 
     private DAPInitializeResponse initializeResponse;
     private boolean initialized;
 
-    private CircularFifoBuffer lastMessages;
+    private final CircularFifoBuffer lastMessages;
 
-    private Map<String, BreakpointsInFile> breakpointsPerFile;
+    private final Map<String, BreakpointsInFile> breakpointsPerFile;
     private boolean batchBreakpointRequests;
 
     private final boolean linesStartAt1 = true;
@@ -95,26 +96,25 @@ public class FactorioDebugger {
 
         lastMessages = new CircularFifoBuffer(20);
 
-        DAPInitializeRequest initializeRequest = new DAPInitializeRequest();
+        DAPInitializeRequest initializeRequest = new DAPInitializeRequest("factorio-debugger-intellij");
 
         ApplicationNamesInfo appinfo = ApplicationNamesInfo.getInstance();
-        initializeRequest.arguments.clientID = appinfo.getScriptName();
-        initializeRequest.arguments.clientName = appinfo.getFullProductName();
-        initializeRequest.arguments.adapterID = "factorio-debugger-intellij";
+        initializeRequest.getArguments().clientID = appinfo.getScriptName();
+        initializeRequest.getArguments().clientName = appinfo.getFullProductName();
 
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
-        initializeRequest.arguments.linesStartAt1 = linesStartAt1;
-        initializeRequest.arguments.columnsStartAt1 = true;
-        initializeRequest.arguments.supportsMemoryEvent = true;
-        initializeRequest.arguments.supportsVariableType = true;
-        initializeRequest.arguments.supportsVariablePaging = true;
-        initializeRequest.arguments.supportsInvalidatedEvent = true;
-        initializeRequest.arguments.supportsMemoryReferences = true;
-        initializeRequest.arguments.supportsProgressReporting = true;
-        initializeRequest.arguments.supportsRunInTerminalRequest = true;
+        initializeRequest.getArguments().linesStartAt1 = linesStartAt1;
+        initializeRequest.getArguments().columnsStartAt1 = true;
+        initializeRequest.getArguments().supportsMemoryEvent = true;
+        initializeRequest.getArguments().supportsVariableType = true;
+        initializeRequest.getArguments().supportsVariablePaging = true;
+        initializeRequest.getArguments().supportsInvalidatedEvent = true;
+        initializeRequest.getArguments().supportsMemoryReferences = true;
+        initializeRequest.getArguments().supportsProgressReporting = true;
+        initializeRequest.getArguments().supportsRunInTerminalRequest = true;
 
-        initializeRequest.arguments.locale = Locale.getDefault().toString().replaceAll("_", "-");
-        initializeRequest.arguments.pathFormat = "path"; // fmtk only supports "paths"
+        initializeRequest.getArguments().locale = Locale.getDefault().toString().replaceAll("_", "-");
+        initializeRequest.getArguments().pathFormat = "path"; // fmtk only supports "paths"
 
         this.<DAPInitializeRequest.InitializeRequestArguments, DAPInitializeResponse>
             asyncRequest(initializeRequest).onProcessed(this::initialize).onError(logger::error);
@@ -142,14 +142,15 @@ public class FactorioDebugger {
     }
     public void launch() {
         DAPLaunchRequest launchRequest = new DAPLaunchRequest();
-        launchRequest.arguments.setOtherField("type", "factoriomod");
-        launchRequest.arguments.setOtherField("request", "launch");
-        launchRequest.arguments.setOtherField("trace", true);
+        launchRequest.getArguments().setOtherField("type", "factoriomod");
+        launchRequest.getArguments().setOtherField("request", "launch");
+        launchRequest.getArguments().setOtherField("trace", true);
         myDAPSocket.sendRequest(launchRequest);
     }
 
     public @NotNull DAPCapabilities getCapabilities() {
-        return this.initializeResponse != null ? this.initializeResponse.body : DAPCapabilities.EMPTY_CAPABILITES;
+        DAPCapabilities adapterCapabilities = this.initializeResponse != null ? this.initializeResponse.body : null;
+        return adapterCapabilities != null ? adapterCapabilities : DAPCapabilities.EMPTY_CAPABILITIES;
     }
 
     public boolean isInitialized() {
@@ -241,7 +242,7 @@ public class FactorioDebugger {
     public Promise<DAPStackTraceResponse> getStackTrace(int threadId) {
         DAPStackTraceRequest stackTraceRequest = new DAPStackTraceRequest(threadId);
         // TODO maybe only 20
-        stackTraceRequest.arguments.levels = Integer.MAX_VALUE;
+        stackTraceRequest.getArguments().levels = Integer.MAX_VALUE;
         return asyncRequest(stackTraceRequest).then(resp -> {
             DAPStackTraceResponse stackTrace = (DAPStackTraceResponse) resp;
 
@@ -249,9 +250,7 @@ public class FactorioDebugger {
                 for (final DAPStackFrame stackFrame : stackTrace.body.stackFrames) {
                     // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize
                     // request)
-                    if (stackFrame.line != null) {
-                        stackFrame.line -= linesStartAt1 ? 1 : 0;
-                    }
+                    stackFrame.line -= linesStartAt1 ? 1 : 0;
                 }
             }
             return stackTrace;
@@ -306,20 +305,27 @@ public class FactorioDebugger {
     public Promise<DAPStepInResponse> stepInto(@Nullable Integer targetId) {
         DAPStepInRequest stepInRequest = new DAPStepInRequest();
         if(targetId != null) {
-            stepInRequest.arguments.targetId = targetId;
+            stepInRequest.getArguments().targetId = targetId;
         }
 
         return this.asyncRequest(stepInRequest);
     }
 
-    public Promise<DAPBreakpointLocationsResponse> getBreakpointLocations() {
+    public Promise<DAPBreakpointLocationsResponse> getBreakpointLocations(@NotNull VirtualFile file, int startLine, int endLine) {
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
+        endLine = endLine < 0 ? startLine : endLine;
 
-        DAPBreakpointLocationsRequest request = new DAPBreakpointLocationsRequest();
-        request.arguments.source.path = "/DataSSD/Games/factorio_80/mods/factorio-codex/build/Migration.lua";
-        request.arguments.line = 1;
-        request.arguments.endLine = 90;
-        return this.asyncRequest(request);
+        DAPBreakpointLocationsRequest request = new DAPBreakpointLocationsRequest(file, startLine, endLine);
+        return this.asyncRequest(request).then(resp -> {
+            DAPBreakpointLocationsResponse loc = (DAPBreakpointLocationsResponse) resp;
+
+            if (loc != null && loc.body != null && loc.body.breakpoints != null) {
+                for (final DAPBreakpointLocation breakpoint : loc.body.breakpoints) {
+                    breakpoint.line -= linesStartAt1 ? 1 : 0;
+                }
+            }
+            return loc;
+        });
     }
 
     public Promise<DAPEvaluateResponse> evaluate(final String expression, final int frameId, final DAPEvaluateRequest.EvalContext context) {
@@ -412,8 +418,15 @@ public class FactorioDebugger {
         }
 
         public void remove(@NotNull XSourcePosition position) {
-            int indx = positions.indexOf(position.getLine());
-            if(indx == -1 || positions.size() == 0) return;
+            int lineToFind = position.getLine();
+            int indx = -1;
+            for (int i = 0; i < positions.size(); i++) {
+                if (positions.get(i).first == lineToFind) {
+                    indx = i;
+                    break;
+                }
+            }
+            if(indx == -1) return;
 
             AsyncPromise<DAPSourceBreakpoint> prom = positions.remove(indx).second;
             if(prom != null) prom.cancel();

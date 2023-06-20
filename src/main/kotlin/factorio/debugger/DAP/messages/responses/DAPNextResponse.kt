@@ -1,8 +1,6 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPResponse;
+import com.fasterxml.jackson.annotation.JsonTypeName
 
 @JsonTypeName("next")
-public class DAPNextResponse extends DAPResponse {
-}
+class DAPNextResponse : DAPResponse()

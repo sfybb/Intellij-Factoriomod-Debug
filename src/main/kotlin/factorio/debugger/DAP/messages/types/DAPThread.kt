@@ -1,18 +1,19 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPThread extends DAPAdditionalProperties {
+class DAPThread : DAPAdditionalProperties() {
     /**
      * Unique identifier for the thread.
      */
+    @JvmField
     @JsonProperty("id")
-    public Integer id;
+    var id: Int = 0
 
     /**
      * The name of the thread.
      */
     @JsonProperty("name")
-    public String name;
+    lateinit var name: String
 }

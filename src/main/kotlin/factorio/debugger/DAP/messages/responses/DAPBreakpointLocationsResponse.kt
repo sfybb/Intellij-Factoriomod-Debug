@@ -1,21 +1,31 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPBreakpointLocation;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPBreakpointLocation
 
 @JsonTypeName("breakpointLocations")
-public class DAPBreakpointLocationsResponse extends DAPResponse {
-
+class DAPBreakpointLocationsResponse : DAPResponse() {
     @JsonProperty("body")
-    public BreakpointLocationsBody body;
-    public static class BreakpointLocationsBody extends DAPAdditionalProperties {
+    lateinit var body: BreakpointLocationsResponseBody
+
+    class BreakpointLocationsResponseBody : DAPAdditionalProperties() {
         /**
          * Sorted set of possible breakpoint locations.
          */
         @JsonProperty("breakpoints")
-        public DAPBreakpointLocation[] breakpoints;
+        lateinit var breakpoints: Array<DAPBreakpointLocation>
+    }
+
+    override fun toString(): String {
+        return "${super.toString()} possible locations ${body.breakpoints.joinToString(
+            prefix = "[",
+            separator = ", ",
+            postfix = "]",
+            limit = 10,
+            truncated = "...",
+            transform = { it.line.toString() }
+        )}"
     }
 }

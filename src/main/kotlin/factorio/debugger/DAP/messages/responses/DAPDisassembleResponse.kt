@@ -1,19 +1,20 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPDisassembledInstruction;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPDisassembledInstruction
 
 @JsonTypeName("disassemble")
-public class DAPDisassembleResponse extends DAPResponse {
+class DAPDisassembleResponse : DAPResponse() {
     @JsonProperty("body")
-    public DisassembleResponseBody body;
-    public static class DisassembleResponseBody {
+    var body: DisassembleResponseBody? = null
+
+    class DisassembleResponseBody : DAPAdditionalProperties() {
         /**
          * The list of disassembled instructions.
          */
         @JsonProperty("instructions")
-        public DAPDisassembledInstruction[] instructions;
+        lateinit var instructions: Array<DAPDisassembledInstruction>
     }
 }

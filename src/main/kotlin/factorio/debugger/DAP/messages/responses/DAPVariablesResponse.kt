@@ -1,21 +1,20 @@
-package factorio.debugger.DAP.messages.response;
+package factorio.debugger.DAP.messages.responses
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeName;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
-import factorio.debugger.DAP.messages.DAPResponse;
-import factorio.debugger.DAP.messages.types.DAPVariable;
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.annotation.JsonTypeName
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
+import factorio.debugger.DAP.messages.types.DAPVariable
 
 @JsonTypeName("variables")
-public class DAPVariablesResponse extends DAPResponse {
+class DAPVariablesResponse : DAPResponse() {
     @JsonProperty("body")
-    public VariablesResponseBody body;
+    lateinit var body: VariablesResponseBody
 
-    public static class VariablesResponseBody extends DAPAdditionalProperties {
+    class VariablesResponseBody : DAPAdditionalProperties() {
         /**
          * All (or a range) of variables for the given variable reference.
          */
         @JsonProperty("variables")
-        public DAPVariable[] variables;
+        lateinit var variables: Array<DAPVariable>
     }
 }

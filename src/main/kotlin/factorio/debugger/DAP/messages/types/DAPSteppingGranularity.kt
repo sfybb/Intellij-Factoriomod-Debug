@@ -1,12 +1,16 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty
 
-public enum DAPSteppingGranularity {
+enum class DAPSteppingGranularity {
     @JsonProperty("statement")
     STATEMENT,
     @JsonProperty("line")
     LINE,
     @JsonProperty("instruction")
-    INSTRUCTION
+    INSTRUCTION;
+
+    override fun toString(): String {
+        return this.name.lowercase()
+    }
 }

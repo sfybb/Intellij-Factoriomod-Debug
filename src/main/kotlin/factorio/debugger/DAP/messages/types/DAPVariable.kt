@@ -1,14 +1,14 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPVariable extends DAPAdditionalProperties {
+class DAPVariable : DAPAdditionalProperties() {
     /**
      * The variable's name.
      */
     @JsonProperty("name")
-    public String name;
+    lateinit var name: String
 
     /**
      * The variable's value.
@@ -20,7 +20,7 @@ public class DAPVariable extends DAPAdditionalProperties {
      * An empty string can be used if no value should be shown in the UI.
      */
     @JsonProperty("value")
-    public String value;
+    lateinit var value: String
 
     /**
      * The type of the variable's value. Typically shown in the UI when hovering
@@ -29,21 +29,21 @@ public class DAPVariable extends DAPAdditionalProperties {
      * corresponding capability `supportsVariableType` is true.
      */
     @JsonProperty("type")
-    public String type;
+    var type: String? = null
 
     /**
      * Properties of a variable that can be used to determine how to render the
      * variable in the UI.
      */
     @JsonProperty("presentationHint")
-    public DAPVariablePresentationHint presentationHint;
+    var presentationHint: DAPVariablePresentationHint? = null
 
     /**
      * The evaluatable name of this variable which can be passed to the `evaluate`
      * request to fetch the variable's value.
      */
     @JsonProperty("evaluateName")
-    public String evaluateName;
+    var evaluateName: String? = null
 
     /**
      * If `variablesReference` is > 0, the variable is structured and its children
@@ -52,7 +52,7 @@ public class DAPVariable extends DAPAdditionalProperties {
      * in the Overview section for details.
      */
     @JsonProperty("variablesReference")
-    public int variablesReference;
+    var variablesReference: Int = 0
 
     /**
      * The number of named child variables.
@@ -60,7 +60,7 @@ public class DAPVariable extends DAPAdditionalProperties {
      * and fetch them in chunks.
      */
     @JsonProperty("namedVariables")
-    public Integer namedVariables;
+    var namedVariables: Int? = null
 
     /**
      * The number of indexed child variables.
@@ -68,7 +68,7 @@ public class DAPVariable extends DAPAdditionalProperties {
      * and fetch them in chunks.
      */
     @JsonProperty("indexedVariables")
-    public Integer indexedVariables;
+    var indexedVariables: Int? = null
 
     /**
      * The memory reference for the variable if the variable represents executable
@@ -77,5 +77,5 @@ public class DAPVariable extends DAPAdditionalProperties {
      * `supportsMemoryReferences` is true.
      */
     @JsonProperty("memoryReference")
-    public String memoryReference;
+    var memoryReference: String? = null
 }

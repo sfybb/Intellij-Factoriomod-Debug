@@ -1,14 +1,9 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import java.util.HashMap;
-import java.util.Map;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPMessage extends DAPAdditionalProperties {
-    public DAPMessage() {
-        variables = new HashMap<>();
-    }
+class DAPMessage : DAPAdditionalProperties() {
     /**
      * Unique (within a debug adapter implementation) identifier for the message.
      * The purpose of these error IDs is to help extension authors that have the
@@ -17,7 +12,7 @@ public class DAPMessage extends DAPAdditionalProperties {
      * the specific error more easily.
      */
     @JsonProperty("id")
-    public Integer id;
+    var id: Int = 0
 
     /**
      * A format string for the message. Embedded variables have the form `{name}`.
@@ -25,36 +20,36 @@ public class DAPMessage extends DAPAdditionalProperties {
      * contain user data (PII) and can be safely used for telemetry purposes.
      */
     @JsonProperty("format")
-    public String format;
+    lateinit var format: String
 
     /**
      * An object used as a dictionary for looking up the variables in the format
      * string.
      */
     @JsonProperty("variables")
-    public Map<String, String> variables;
+    var variables: Map<String, String> = mapOf()
 
     /**
      * If true send to telemetry.
      */
     @JsonProperty("sendTelemetry")
-    public Boolean sendTelemetry;
+    var sendTelemetry: Boolean? = null
 
     /**
      * If true show user.
      */
     @JsonProperty("showUser")
-    public Boolean showUser;
+    var showUser: Boolean? = null
 
     /**
      * A url where additional information about this message can be found.
      */
     @JsonProperty("url")
-    public String url;
+    var url: String? = null
 
     /**
      * A label that is presented to the user as the UI for opening the url.
      */
     @JsonProperty("urlLabel")
-    public String urlLabel;
+    var urlLabel: String? = null
 }

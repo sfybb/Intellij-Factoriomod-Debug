@@ -13,7 +13,7 @@ public class FactorioValueModifier extends XValueModifier {
     public FactorioValueModifier(final @NotNull FactorioExecutionStack executionStack,
                                  final @NotNull FactorioVariableValue factorioVariableValue) {
         this.myExeutionStack = executionStack;
-        this.myVariableContainer = factorioVariableValue.getParent();
+        this.myVariableContainer = factorioVariableValue.getMyParent();
         this.myVaribleName = factorioVariableValue.getName();
         this.myInitialValue = factorioVariableValue.getValue();
     }

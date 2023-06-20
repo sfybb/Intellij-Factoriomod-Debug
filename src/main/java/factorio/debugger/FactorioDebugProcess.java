@@ -24,8 +24,10 @@ import com.intellij.execution.ui.ExecutionConsole;
 import com.intellij.openapi.actionSystem.Anchor;
 import com.intellij.openapi.actionSystem.Constraints;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.application.AppUIExecutor;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.ui.messages.MessagesService;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.util.Pair;
@@ -47,22 +49,23 @@ import com.intellij.xdebugger.frame.XSuspendContext;
 import com.intellij.xdebugger.impl.XDebugSessionImpl;
 import com.intellij.xdebugger.impl.breakpoints.XBreakpointUtil;
 import com.intellij.xdebugger.stepping.XSmartStepIntoHandler;
-import factorio.debugger.DAP.messages.DAPEvent;
 import factorio.debugger.DAP.messages.DAPEventNames;
 import factorio.debugger.DAP.messages.events.DAPBreakpointEvent;
+import factorio.debugger.DAP.messages.events.DAPEvent;
 import factorio.debugger.DAP.messages.events.DAPModuleEvent;
 import factorio.debugger.DAP.messages.events.DAPOutputEvent;
 import factorio.debugger.DAP.messages.events.DAPStoppedEvent;
 import factorio.debugger.DAP.messages.requests.DAPEvaluateRequest;
-import factorio.debugger.DAP.messages.response.DAPCompletionsResponse;
-import factorio.debugger.DAP.messages.response.DAPEvaluateResponse;
-import factorio.debugger.DAP.messages.response.DAPScopesResponse;
-import factorio.debugger.DAP.messages.response.DAPSetExpressionResponse;
-import factorio.debugger.DAP.messages.response.DAPStackTraceResponse;
-import factorio.debugger.DAP.messages.response.DAPStepInTargetsResponse;
-import factorio.debugger.DAP.messages.response.DAPThreadsResponse;
-import factorio.debugger.DAP.messages.response.DAPVariablesResponse;
+import factorio.debugger.DAP.messages.responses.DAPCompletionsResponse;
+import factorio.debugger.DAP.messages.responses.DAPEvaluateResponse;
+import factorio.debugger.DAP.messages.responses.DAPScopesResponse;
+import factorio.debugger.DAP.messages.responses.DAPSetExpressionResponse;
+import factorio.debugger.DAP.messages.responses.DAPStackTraceResponse;
+import factorio.debugger.DAP.messages.responses.DAPStepInTargetsResponse;
+import factorio.debugger.DAP.messages.responses.DAPThreadsResponse;
+import factorio.debugger.DAP.messages.responses.DAPVariablesResponse;
 import factorio.debugger.DAP.messages.types.DAPBreakpoint;
+import factorio.debugger.DAP.messages.types.DAPBreakpointLocation;
 import factorio.debugger.DAP.messages.types.DAPCapabilities;
 import factorio.debugger.DAP.messages.types.DAPCapabilitiesEnum;
 import factorio.debugger.DAP.messages.types.DAPSourceBreakpoint;
@@ -111,6 +114,7 @@ public class FactorioDebugProcess extends XDebugProcess {
         GlobalSearchScope scope = ExecutionSearchScopes.executionScope(session.getProject(), session.getRunProfile());
         TextConsoleBuilder builder = TextConsoleBuilderFactory.getInstance().createBuilder(session.getProject(), scope);
         this.myDebugeeConsole = builder.getConsole();
+        //this.myDebugeeConsole.addMessageFilter(new FactorioDAPJsonFilter());
         Disposer.register(executionConsole, this.myDebugeeConsole);
 
         this.runToPositionBreakpoint = null;
@@ -210,13 +214,14 @@ public class FactorioDebugProcess extends XDebugProcess {
 
     private void debugeeOutput(@Async.Execute final DAPEvent dapEvent) {
         DAPOutputEvent outputEvent = (DAPOutputEvent) dapEvent;
+        final DAPOutputEvent.OutputCategory category = outputEvent.body.getCategory();
 
-        if (outputEvent.body.output == null || outputEvent.body.category == null) {
+        if (category == null) {
             logger.warn("Received invalid output event!");
             return;
         }
 
-        ConsoleViewContentType contentType = switch (outputEvent.body.category) {
+        ConsoleViewContentType contentType = switch (category) {
             case IMPORTANT -> ConsoleViewContentType.LOG_ERROR_OUTPUT;
             case CONSOLE -> ConsoleViewContentType.LOG_INFO_OUTPUT;
             case STDOUT -> ConsoleViewContentType.NORMAL_OUTPUT;
@@ -230,7 +235,7 @@ public class FactorioDebugProcess extends XDebugProcess {
         }
 
         if (ConsoleViewContentType.SYSTEM_OUTPUT != contentType) this.myDebugeeConsole.print(outputEvent.body.output, contentType);
-        else logger.warn("Debugger output: " + outputEvent.body.category.name() + " " + outputEvent.body.output);
+        else logger.warn("Debugger output: " + category.name() + " " + outputEvent.body.output);
     }
 
     private void positionReached(@NotNull final DAPStoppedEvent stoppedEvent, @NotNull final DAPThreadsResponse threadInfo) {
@@ -241,31 +246,28 @@ public class FactorioDebugProcess extends XDebugProcess {
         final DAPStoppedEvent.StoppedEventBody stopped = stoppedEvent.body;
 
         Promise<XLineBreakpoint<?>> tmpHitBP = null;
-        if (stopped.reason == DAPStoppedEvent.StoppedEventBody.SoppedReason.BREAKPOINT ||
-            stopped.reason == DAPStoppedEvent.StoppedEventBody.SoppedReason.FUNCTION_BREAKPOINT ||
-            stopped.reason == DAPStoppedEvent.StoppedEventBody.SoppedReason.DATA_BREAKPOINT ||
-            stopped.reason == DAPStoppedEvent.StoppedEventBody.SoppedReason.INSTRUCTION_BREAKPOINT) {
+        if (stopped.reason == DAPStoppedEvent.SoppedReason.BREAKPOINT ||
+            stopped.reason == DAPStoppedEvent.SoppedReason.FUNCTION_BREAKPOINT ||
+            stopped.reason == DAPStoppedEvent.SoppedReason.DATA_BREAKPOINT ||
+            stopped.reason == DAPStoppedEvent.SoppedReason.INSTRUCTION_BREAKPOINT) {
             // Breakpoint hit
 
             boolean isRTPBreakpoint = false; // is this the "runToPosition" helper breakpoint?
 
             Integer[] hitBreakpointIds = stopped.hitBreakpointIds;
-            if(hitBreakpointIds != null) {
-                for (final Integer hitBreakpointId : hitBreakpointIds) {
-                    if (runToPositionBreakpoint != null &&
-                        Objects.equals(runToPositionBreakpoint.first, hitBreakpointId)) {
-                        isRTPBreakpoint = true;
-                        break;
-                    }
+            for (final Integer hitBreakpointId : hitBreakpointIds) {
+                if (runToPositionBreakpoint != null && Objects.equals(runToPositionBreakpoint.first, hitBreakpointId)) {
+                    isRTPBreakpoint = true;
+                    break;
                 }
+            }
 
 
-                for (final Integer hitBreakpointId : hitBreakpointIds) {
-                    XLineBreakpoint<?> bp = idToBreakpointMap.get(hitBreakpointId);
-                    if(bp != null) {
-                        tmpHitBP = Promises.resolvedPromise(bp);
-                        break;
-                    }
+            for (final Integer hitBreakpointId : hitBreakpointIds) {
+                XLineBreakpoint<?> bp = idToBreakpointMap.get(hitBreakpointId);
+                if(bp != null) {
+                    tmpHitBP = Promises.resolvedPromise(bp);
+                    break;
                 }
             }
 
@@ -276,7 +278,7 @@ public class FactorioDebugProcess extends XDebugProcess {
             }
 
 
-            if(tmpHitBP == null && !isRTPBreakpoint) {
+            if(tmpHitBP == null) {
                 // Try to find bp by source position
                 AsyncPromise<XLineBreakpoint<?>> foundLineBp = new AsyncPromise<>();
                 tmpHitBP = foundLineBp;
@@ -437,26 +439,38 @@ public class FactorioDebugProcess extends XDebugProcess {
     @Override
     public void runToPosition(@NotNull final XSourcePosition position, @Nullable final XSuspendContext context) {
         //runToPositionBreakpoint = new Pair<>(-1, position);
+        XSourcePosition convertedPosition = this.myPositionConverter.convertToFactorio(position);
+        this.myDebugger.getBreakpointLocations(convertedPosition.getFile(), convertedPosition.getLine(), -1).onProcessed(bpLocations -> {
+            DAPBreakpointLocation[] bps = bpLocations != null && bpLocations.body != null && bpLocations.body.breakpoints != null ? bpLocations.body.breakpoints : null;
+            int line = bps != null && bps.length > 0 ? bps[0].line : -1;
 
-        addInvisibleTemporaryBreakpoint(position)
-            .onSuccess(rtpBp -> {
-                Object id = rtpBp.additionalProperties.get("id");
-                if(id instanceof Integer) {
-                    runToPositionBreakpoint = new Pair<>((Integer) id, position);
-                    resume(context);
-                }
-            })
-            .onError(err -> {
-                this.getSession().reportError("Unable to run to position: failed to create helper breakpoint: "+ err);
-            });
+            if (convertedPosition.getLine() == line) {
+                addInvisibleTemporaryBreakpoint(convertedPosition)
+                    .onSuccess(rtpBp -> {
+                        Object id = rtpBp.additionalProperties.get("id");
+                        if(id instanceof Integer) {
+                            runToPositionBreakpoint = new Pair<>((Integer) id, position);
+                            resume(context);
+                        }
+                    })
+                    .onError(err -> this.getSession().reportError("Unable to run to position: failed to create helper breakpoint: "+ err));
+            } else {
+                AppUIExecutor.onUiThread().submit(() ->
+                    MessagesService.getInstance().showErrorDialog(
+                        this.getSession().getProject(),
+                        String.format("No executable code found at\n%s:%s", position.getFile().getName(), position.getLine()), "Run To Cursor"));
+                //final Collection<NotificationGroup> registeredNotificationGroups = NotificationGroupManager.getInstance().getRegisteredNotificationGroups();
+                //NotificationGroupManager.getInstance().getNotificationGroup("JavaEE execution issue");
+                //this.getSession().reportError("No source code found in line " + position.getLine());
+            }
+        });
     }
 
     public void reregisterBreakpoints() {
         ((FactorioLineBreakpointHandler)this.myBreakpointHandlers[0]).reregisterBreakpoints();
     }
 
-    private Promise<DAPSourceBreakpoint> addInvisibleTemporaryBreakpoint(final XSourcePosition position) {
-        XSourcePosition convertedPosition = this.myPositionConverter.convertToFactorio(position);
+    private Promise<DAPSourceBreakpoint> addInvisibleTemporaryBreakpoint(final XSourcePosition convertedPosition) {
         // TODO check for acceptable breakpoint locations
         return this.myDebugger.addBreakpoint(convertedPosition, null);
     }
@@ -516,10 +530,6 @@ public class FactorioDebugProcess extends XDebugProcess {
 
     public Promise<DAPVariablesResponse> getVariable(int varRev, final int offset, final int maxResults) {
         return this.myDebugger.getVariable(varRev, offset, maxResults);
-    }
-
-    public String getFactorioBaseDir() {
-        return myFactorioGameRuntimeEnv.getBasePath();
     }
 
     public Promise<DAPStackTraceResponse> getStackTrace(final int id) {

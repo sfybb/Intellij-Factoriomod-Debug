@@ -1,15 +1,16 @@
-package factorio.debugger.DAP.messages.types;
+package factorio.debugger.DAP.messages.types
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import factorio.debugger.DAP.messages.DAPAdditionalProperties;
+import com.fasterxml.jackson.annotation.JsonProperty
+import factorio.debugger.DAP.messages.DAPAdditionalProperties
 
-public class DAPChecksum extends DAPAdditionalProperties {
+class DAPChecksum : DAPAdditionalProperties() {
     /**
      * The algorithm used to calculate this checksum.
      */
     @JsonProperty("algorithm")
-    public ChecksumAlgorithm algorithm;
-    public enum ChecksumAlgorithm {
+    lateinit var algorithm: ChecksumAlgorithm
+
+    enum class ChecksumAlgorithm {
         @JsonProperty("MD5")
         MD5,
         @JsonProperty("SHA1")
@@ -24,5 +25,5 @@ public class DAPChecksum extends DAPAdditionalProperties {
      * Value of the checksum, encoded as a hexadecimal value.
      */
     @JsonProperty("checksum")
-    public String checksum;
+    lateinit var checksum: String
 }

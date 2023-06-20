@@ -1,16 +1,15 @@
-package factorio.debugger.DAP.messages;
+package factorio.debugger.DAP.messages
 
-
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty
 
 //@JsonInclude(JsonInclude.Include.NON_NULL)
-public class DAPProtocolMessage extends DAPAdditionalProperties {
+open class DAPProtocolMessage : DAPAdditionalProperties() {
     /**
      * Message type.
      * Values: 'request', 'response', 'event', etc.
      */
     @JsonProperty("type")
-    public String type;
+    lateinit var type: String
 
     /**
      * Sequence number of the message (also known as message ID). The `seq` for
@@ -21,6 +20,7 @@ public class DAPProtocolMessage extends DAPAdditionalProperties {
      * messages of type `request` the sequence number can be used to cancel the
      * request.
      */
+    @JvmField
     @JsonProperty("seq")
-    public int sequence;
+    var sequence: Int = 0
 }
