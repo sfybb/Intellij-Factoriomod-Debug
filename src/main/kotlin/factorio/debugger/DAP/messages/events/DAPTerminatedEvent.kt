@@ -8,7 +8,7 @@ import factorio.debugger.DAP.messages.DAPAdditionalProperties
 @JsonTypeName("terminated")
 class DAPTerminatedEvent : DAPEvent() {
     @JsonProperty("body")
-    lateinit var body: TerminatedEventBody
+    var body: TerminatedEventBody? = null
 
     class TerminatedEventBody : DAPAdditionalProperties() {
         /**
@@ -23,6 +23,6 @@ class DAPTerminatedEvent : DAPEvent() {
     }
 
     override fun toString(): String {
-        return "Event: terminated ${body.restart?.let{ "and restart with '$it'" }}"
+        return "Event: terminated ${body?.restart?.let{ "and restart with '$it'" }}"
     }
 }
