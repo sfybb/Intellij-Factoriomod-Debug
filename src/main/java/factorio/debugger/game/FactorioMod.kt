@@ -133,6 +133,8 @@ class FactorioMod(private val myId: String, private val myName: String, private 
         // TODO move to correct position in FactorioLocalPositionConverter
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
         val relPath = myProjectPath?.relativize(fPosition.file.toNioPath()) ?: myBasePath.relativize(fPosition.file.toNioPath())
+
+        // TODO factorio path to lua
         val script = myScripts[relPath] ?: return fPosition
         return script.convertFactorioToSource(fPosition)
     }
@@ -150,6 +152,7 @@ class FactorioMod(private val myId: String, private val myName: String, private 
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
         val relSPath = relativizePath(Path.of(sPosition.file.path))
 
+        // TODO convert lua path to factorio
         val script = myScripts[mySourceMappedFiles[relSPath]] ?: return sPosition
         return script.convertSourceToFactorio(sPosition)
     }
@@ -183,6 +186,8 @@ class FactorioMod(private val myId: String, private val myName: String, private 
 
             var foundInfoJson: Path? = null
             for (module in myProject.modules) {
+                // TODO cache infoJson's
+
                 if (foundInfoJson != null) break
                 for (contentRoot in module.rootManager.contentRoots) {
                     VfsUtilCore.iterateChildrenRecursively(contentRoot,

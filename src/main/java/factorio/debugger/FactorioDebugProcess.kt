@@ -1,592 +1,501 @@
-package factorio.debugger;
+package factorio.debugger
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-import org.jetbrains.annotations.Async;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.concurrency.AsyncPromise;
-import org.jetbrains.concurrency.Promise;
-import org.jetbrains.concurrency.Promises;
-import com.intellij.execution.filters.TextConsoleBuilder;
-import com.intellij.execution.filters.TextConsoleBuilderFactory;
-import com.intellij.execution.process.KillableProcessHandler;
-import com.intellij.execution.process.ProcessEvent;
-import com.intellij.execution.process.ProcessHandler;
-import com.intellij.execution.process.ProcessListener;
-import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.execution.ui.ExecutionConsole;
-import com.intellij.openapi.actionSystem.Anchor;
-import com.intellij.openapi.actionSystem.Constraints;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.application.AppUIExecutor;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.ui.messages.MessagesService;
-import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.util.Key;
-import com.intellij.openapi.util.Pair;
-import com.intellij.psi.search.ExecutionSearchScopes;
-import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.xdebugger.XDebugProcess;
-import com.intellij.xdebugger.XDebugProcessStarter;
-import com.intellij.xdebugger.XDebugSession;
-import com.intellij.xdebugger.XDebugSessionListener;
-import com.intellij.xdebugger.XSourcePosition;
-import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
-import com.intellij.xdebugger.breakpoints.XBreakpointType;
-import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
-import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider;
-import com.intellij.xdebugger.evaluation.XDebuggerEvaluator;
-import com.intellij.xdebugger.frame.XExecutionStack;
-import com.intellij.xdebugger.frame.XStackFrame;
-import com.intellij.xdebugger.frame.XSuspendContext;
-import com.intellij.xdebugger.impl.XDebugSessionImpl;
-import com.intellij.xdebugger.impl.breakpoints.XBreakpointUtil;
-import com.intellij.xdebugger.stepping.XSmartStepIntoHandler;
-import factorio.debugger.DAP.messages.DAPEventNames;
-import factorio.debugger.DAP.messages.events.DAPBreakpointEvent;
-import factorio.debugger.DAP.messages.events.DAPEvent;
-import factorio.debugger.DAP.messages.events.DAPModuleEvent;
-import factorio.debugger.DAP.messages.events.DAPOutputEvent;
-import factorio.debugger.DAP.messages.events.DAPStoppedEvent;
-import factorio.debugger.DAP.messages.requests.DAPEvaluateRequest;
-import factorio.debugger.DAP.messages.responses.DAPCompletionsResponse;
-import factorio.debugger.DAP.messages.responses.DAPEvaluateResponse;
-import factorio.debugger.DAP.messages.responses.DAPScopesResponse;
-import factorio.debugger.DAP.messages.responses.DAPSetExpressionResponse;
-import factorio.debugger.DAP.messages.responses.DAPStackTraceResponse;
-import factorio.debugger.DAP.messages.responses.DAPStepInTargetsResponse;
-import factorio.debugger.DAP.messages.responses.DAPThreadsResponse;
-import factorio.debugger.DAP.messages.responses.DAPVariablesResponse;
-import factorio.debugger.DAP.messages.types.DAPBreakpoint;
-import factorio.debugger.DAP.messages.types.DAPBreakpointLocation;
-import factorio.debugger.DAP.messages.types.DAPCapabilities;
-import factorio.debugger.DAP.messages.types.DAPCapabilitiesEnum;
-import factorio.debugger.DAP.messages.types.DAPSourceBreakpoint;
-import factorio.debugger.DAP.messages.types.DAPThread;
-import factorio.debugger.DAP.messages.types.DAPVariable;
-import factorio.debugger.actions.FactorioExceptionBreakpointAction;
-import factorio.debugger.breakpoint.FactorioLineBreakpointHandler;
-import factorio.debugger.frames.FactorioSourcePosition;
-import factorio.debugger.frames.FactorioStackFrame;
-import factorio.debugger.frames.FactorioVariableContainer;
-import factorio.debugger.game.FactorioGameRuntimeEnvironment;
+import com.intellij.execution.filters.TextConsoleBuilderFactory
+import com.intellij.execution.process.KillableProcessHandler
+import com.intellij.execution.process.ProcessEvent
+import com.intellij.execution.process.ProcessHandler
+import com.intellij.execution.process.ProcessListener
+import com.intellij.execution.ui.ConsoleView
+import com.intellij.execution.ui.ConsoleViewContentType
+import com.intellij.execution.ui.ExecutionConsole
+import com.intellij.openapi.actionSystem.Anchor
+import com.intellij.openapi.actionSystem.Constraints
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.application.AppUIExecutor
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.ui.messages.MessagesService
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.Key
+import com.intellij.openapi.util.Pair
+import com.intellij.psi.search.ExecutionSearchScopes
+import com.intellij.util.containers.toArray
+import com.intellij.xdebugger.XDebugProcess
+import com.intellij.xdebugger.XDebugSession
+import com.intellij.xdebugger.XDebugSessionListener
+import com.intellij.xdebugger.XSourcePosition
+import com.intellij.xdebugger.breakpoints.XBreakpointHandler
+import com.intellij.xdebugger.breakpoints.XLineBreakpoint
+import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider
+import com.intellij.xdebugger.evaluation.XDebuggerEvaluator
+import com.intellij.xdebugger.frame.XSuspendContext
+import com.intellij.xdebugger.impl.XDebugSessionImpl
+import com.intellij.xdebugger.impl.breakpoints.XBreakpointUtil
+import com.intellij.xdebugger.stepping.XSmartStepIntoHandler
+import factorio.debugger.DAP.messages.DAPEventNames
+import factorio.debugger.DAP.messages.events.*
+import factorio.debugger.DAP.messages.events.DAPOutputEvent.OutputCategory
+import factorio.debugger.DAP.messages.requests.DAPEvaluateRequest.EvalContext
+import factorio.debugger.DAP.messages.responses.*
+import factorio.debugger.DAP.messages.types.*
+import factorio.debugger.actions.FactorioExceptionBreakpointAction
+import factorio.debugger.breakpoint.FactorioLineBreakpointHandler
+import factorio.debugger.frames.FactorioSourcePosition
+import factorio.debugger.frames.FactorioStackFrame
+import factorio.debugger.frames.FactorioVariableContainer
+import factorio.debugger.game.FactorioGameRuntimeEnvironment
+import kotlinx.coroutines.*
+import org.jetbrains.annotations.Async
+import org.jetbrains.concurrency.*
 
-public class FactorioDebugProcess extends XDebugProcess {
-    private final FactorioSmartStepIntoHandler mySmartStepIntoHandler;
-    private final Logger logger = com.intellij.openapi.diagnostic.Logger.getInstance(FactorioDebugProcess.class);
-    private final KillableProcessHandler myProcessHandler;
-    private final FactorioDebuggerEditorsProvider myEditorsProvider;
-    private final ExecutionConsole myExecutionConsole;
-    private final FactorioGameRuntimeEnvironment myFactorioGameRuntimeEnv;
-    private final ConsoleView myDebugeeConsole;
-    private final FactorioDebugger myDebugger;
-    private XBreakpointHandler<?>[] myBreakpointHandlers;
-    private final FactorioLocalPositionConverter myPositionConverter;
-    private @Nullable Pair<Integer, XSourcePosition> runToPositionBreakpoint;
-
-    private final Map<Integer, XLineBreakpoint<?>> idToBreakpointMap;
+class FactorioDebugProcess(
+    session: XDebugSession,
+    processHandler: ProcessHandler?,
+    private val myFactorioGameRuntimeEnv: FactorioGameRuntimeEnvironment,
+    executionConsole: ExecutionConsole
+) : XDebugProcess(session) {
+    private val mySmartStepIntoHandler: FactorioSmartStepIntoHandler
+    private val logger = Logger.getInstance(FactorioDebugProcess::class.java)
+    private val myProcessHandler: KillableProcessHandler?
+    private val myEditorsProvider: FactorioDebuggerEditorsProvider
+    private val myExecutionConsole: ExecutionConsole
+    private val myDebugeeConsole: ConsoleView
+    private val myDebugger: FactorioDebugger
+    private lateinit var myBreakpointHandlers: Array<XBreakpointHandler<*>>
+    private val myPositionConverter: FactorioLocalPositionConverter
+    private var runToPositionBreakpoint: Pair<Int, XSourcePosition?>?
+    private val idToBreakpointMap: MutableMap<Int?, XLineBreakpoint<*>>
 
     /**
-     * @param session pass {@code session} parameter of {@link XDebugProcessStarter#start} method to this constructor
+     * @param session pass `session` parameter of [XDebugProcessStarter.start] method to this constructor
      */
-    protected FactorioDebugProcess(@NotNull final XDebugSession session,
-                                   @Nullable ProcessHandler processHandler,
-                                   @NotNull FactorioGameRuntimeEnvironment factorioGameRuntimeEnv,
-                                   @NotNull ExecutionConsole executionConsole) {
-        super(session);
-        /** TODO {@link com.intellij.javascript.debugger.scripts.SourceTabManager#addScript} */
-        this.myProcessHandler = (KillableProcessHandler) processHandler;
-        this.myFactorioGameRuntimeEnv = factorioGameRuntimeEnv;
-        this.myEditorsProvider = new FactorioDebuggerEditorsProvider();
-        this.myExecutionConsole = executionConsole;
-        this.idToBreakpointMap = new HashMap<>();
-        this.myPositionConverter = new FactorioLocalPositionConverter(session.getProject());
-        this.mySmartStepIntoHandler = new FactorioSmartStepIntoHandler(this);
-        session.setPauseActionSupported(true);
-
-        GlobalSearchScope scope = ExecutionSearchScopes.executionScope(session.getProject(), session.getRunProfile());
-        TextConsoleBuilder builder = TextConsoleBuilderFactory.getInstance().createBuilder(session.getProject(), scope);
-        this.myDebugeeConsole = builder.getConsole();
+    init {
+        /** TODO [com.intellij.javascript.debugger.scripts.SourceTabManager.addScript]  */
+        this.myProcessHandler = processHandler as KillableProcessHandler?
+        myEditorsProvider = FactorioDebuggerEditorsProvider()
+        myExecutionConsole = executionConsole
+        idToBreakpointMap = HashMap()
+        myPositionConverter = FactorioLocalPositionConverter(session.project)
+        mySmartStepIntoHandler = FactorioSmartStepIntoHandler(this)
+        session.setPauseActionSupported(true)
+        val scope = ExecutionSearchScopes.executionScope(session.project, session.runProfile)
+        val builder = TextConsoleBuilderFactory.getInstance().createBuilder(session.project, scope)
+        myDebugeeConsole = builder.console
         //this.myDebugeeConsole.addMessageFilter(new FactorioDAPJsonFilter());
-        Disposer.register(executionConsole, this.myDebugeeConsole);
-
-        this.runToPositionBreakpoint = null;
-        this.myDebugger = new FactorioDebugger(this);
-
-        if(this.myProcessHandler != null) {
-            this.myProcessHandler.addProcessListener(this.myDebugger.getSocket());
-            this.myProcessHandler.addProcessListener(new ProcessListener() {
-                @Override public void startNotified(@NotNull ProcessEvent event) {}
-                @Override public void onTextAvailable(@NotNull ProcessEvent event, @NotNull Key outputType) {}
-
-                @Override
-                public void processTerminated(@NotNull ProcessEvent event) {
-                    if(!FactorioDebugProcess.this.myDebugger.wasTerminationRequested() && event.getExitCode() != 0) {
-                        String errorMessage = FactorioDebugProcess.this.myDebugger.getLastReceivedMessage();
-                        FactorioDebugProcess.this.myDebugeeConsole.print(String.format("Last message from FMTK:\n%s", errorMessage), ConsoleViewContentType.LOG_ERROR_OUTPUT);
-                        FactorioDebugProcess.this.getSession().reportError("Debugee terminated unexpectedly");
+        Disposer.register(executionConsole, myDebugeeConsole)
+        runToPositionBreakpoint = null
+        myDebugger = FactorioDebugger(this)
+        if (this.myProcessHandler != null) {
+            this.myProcessHandler.addProcessListener(myDebugger.socket)
+            this.myProcessHandler.addProcessListener(object : ProcessListener {
+                override fun startNotified(event: ProcessEvent) {}
+                override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {}
+                override fun processTerminated(event: ProcessEvent) {
+                    if (!myDebugger.wasTerminationRequested() && event.exitCode != 0) {
+                        val errorMessage = myDebugger.lastReceivedMessage
+                        myDebugeeConsole.print(
+                            "Last message from FMTK:\n$errorMessage",
+                            ConsoleViewContentType.LOG_ERROR_OUTPUT
+                        )
+                        session.reportError("Debugee terminated unexpectedly")
                     }
                 }
-            });
+            })
         }
-
-        session.addSessionListener(new XDebugSessionListener() {
-            @Override
-            public void sessionStopped() {
-                XDebugSessionListener.super.sessionStopped();
+        session.addSessionListener(object : XDebugSessionListener {
+            override fun sessionStopped() {
+                super.sessionStopped()
             }
-        });
-
-        this.myDebugger.setEventHandler(DAPEventNames.STOPPED, stoppedEvent -> {
-            if(stoppedEvent != null) {
-                this.myDebugger.getThreads().onProcessed(threads -> FactorioDebugProcess.this.positionReached((DAPStoppedEvent) stoppedEvent, threads));
-            }
-        });
-        this.myDebugger.setEventHandler(DAPEventNames.OUTPUT, this::debugeeOutput);
-        this.myDebugger.setEventHandler(DAPEventNames.MODULE, event -> this.myPositionConverter.addModule((DAPModuleEvent)event, factorioGameRuntimeEnv));
-        this.myDebugger.setEventHandler(DAPEventNames.INITIALIZED , init_msg -> {
-            FactorioDebugProcess.this.initialize(FactorioDebugProcess.this.myDebugger.getCapabilities(), init_msg.sequence);
-        });
-        this.myDebugger.setEventHandler(DAPEventNames.BREAKPOINT, this::handleBreakpointEvent);
-        this.myDebugger.setEventHandler(DAPEventNames.TERMINATED, ignored -> {
-            logger.info(String.valueOf(ignored));
-            this.getSession().stop();
-        });
+        })
+        myDebugger.setEventHandler(DAPEventNames.STOPPED) { stoppedEvent: DAPEvent ->
+            myDebugger.threads.onProcessed { threads: DAPThreadsResponse -> positionReached(stoppedEvent as DAPStoppedEvent, threads) }
+        }
+        myDebugger.setEventHandler(DAPEventNames.OUTPUT) { dapEvent: DAPEvent -> debugeeOutput(dapEvent) }
+        myDebugger.setEventHandler(DAPEventNames.MODULE) { event: DAPEvent ->
+            myPositionConverter.addModule(event as DAPModuleEvent, myFactorioGameRuntimeEnv)
+        }
+        myDebugger.setEventHandler(DAPEventNames.INITIALIZED) { initMsg: DAPEvent ->
+            initialize(myDebugger.capabilities, initMsg.sequence)
+        }
+        myDebugger.setEventHandler(DAPEventNames.BREAKPOINT) { dapEvent: DAPEvent -> handleBreakpointEvent(dapEvent) }
+        myDebugger.setEventHandler(DAPEventNames.TERMINATED) { ignored: DAPEvent ->
+            logger.info(ignored.toString())
+            session.stop()
+        }
     }
 
-    private void tryAddBreakpointTypesByClassPath(List<XBreakpointHandler<?>> breakpointHandlers, String[] breakpointIds) {
-        for(String bpId : breakpointIds) {
-            final XBreakpointType<?, ?> breakpointType = XBreakpointUtil.findType(bpId);
-            if(breakpointType != null) {
-                breakpointHandlers.add(new FactorioLineBreakpointHandler(this, breakpointType.getClass()));
+    private fun tryAddBreakpointTypesByClassPath(breakpointHandlers: MutableList<XBreakpointHandler<*>>, breakpointIds: Array<String>) {
+        for (bpId in breakpointIds) {
+            val breakpointType = XBreakpointUtil.findType(bpId)
+            if (breakpointType != null) {
+                breakpointHandlers.add(FactorioLineBreakpointHandler(this, breakpointType.javaClass))
             } else {
-                logger.info(String.format("Cannot add breakpoint type '%s'", bpId));
+                logger.info("Cannot add breakpoint type '$bpId'")
             }
         }
     }
 
-    private void initialize(final DAPCapabilities capabilities, int receive_sequence) {
-        logger.info("Connected debug adapter capabilities: " +
-            capabilities.getCapabilities().stream().map(Enum::name)
-                .collect(Collectors.joining(", ", "[", "]")));
+    private fun initialize(capabilities: DAPCapabilities, receiveSequence: Int) {
 
-        List<XBreakpointHandler<?>> breakpointHandlers = new ArrayList<>();
+        logger.info("Connected debug adapter capabilities: ${
+            capabilities.capabilities.joinToString(
+                prefix = "[",
+                postfix = "]",
+                separator = ", ",
+                transform = { it.name }
+            )
+        }")
+        val breakpointHandlers: MutableList<XBreakpointHandler<*>> = ArrayList()
+        tryAddBreakpointTypesByClassPath(breakpointHandlers, arrayOf("lua-line", "javascript"))
+        myBreakpointHandlers = breakpointHandlers.toArray(XBreakpointHandler.EMPTY_ARRAY)
 
-        /*if (capabilities == null) {
 
-        }*/
-        //breakpointHandlers.add(new FactorioExceptionBreakpointHandler(this)); "javascript-exception"
-        tryAddBreakpointTypesByClassPath(breakpointHandlers, new String[]{"lua-line", "javascript"});
-
-        this.myBreakpointHandlers = breakpointHandlers.toArray(XBreakpointHandler.EMPTY_ARRAY);
-
-        this.myDebugger.whenPreviousEventsProcessed(receive_sequence).onProcessed(ignored -> {
-            FactorioDebugProcess.this.logger.warn("Requesting breakpoint initialization");
-            ApplicationManager.getApplication().runReadAction(() -> {
-                FactorioDebugProcess.this.getSession().initBreakpoints();
-                FactorioDebugProcess.this.myDebugger.processAddedBreakpoints(true);
+        myDebugger.whenPreviousEventsProcessed(receiveSequence).onProcessed { _: List<Boolean?>? ->
+            logger.warn("Requesting breakpoint initialization")
+            ApplicationManager.getApplication().runReadAction {
+                this@FactorioDebugProcess.session.initBreakpoints()
+                myDebugger.processAddedBreakpoints(true)
                 if (hasCapability(DAPCapabilitiesEnum.ConfigurationDoneRequest)) {
-                    FactorioDebugProcess.this.myDebugger.configurationDone();
+                    myDebugger.configurationDone()
                 }
-            });
-        });
+            }
+        }
     }
 
-    public DAPCapabilities getCapabilities() {
-        return this.myDebugger.getCapabilities();
+    val capabilities: DAPCapabilities
+        get() = myDebugger.capabilities
+
+    fun hasCapability(capability: DAPCapabilitiesEnum?): Boolean {
+        return capabilities.has(capability!!)
     }
 
-    public boolean hasCapability(DAPCapabilitiesEnum capability) {
-        return getCapabilities().has(capability);
+    override fun registerAdditionalActions(leftToolbar: DefaultActionGroup, topToolbar: DefaultActionGroup, settings: DefaultActionGroup) {
+        leftToolbar.addAction(FactorioExceptionBreakpointAction(), Constraints(Anchor.AFTER, "XDebugger.MuteBreakpoints"))
     }
 
-    @Override
-    public void registerAdditionalActions(@NotNull final DefaultActionGroup leftToolbar, @NotNull final DefaultActionGroup topToolbar, @NotNull final DefaultActionGroup settings) {
-        leftToolbar.addAction(new FactorioExceptionBreakpointAction(), new Constraints(Anchor.AFTER, "XDebugger.MuteBreakpoints"));
-    }
-
-    private void debugeeOutput(@Async.Execute final DAPEvent dapEvent) {
-        DAPOutputEvent outputEvent = (DAPOutputEvent) dapEvent;
-        final DAPOutputEvent.OutputCategory category = outputEvent.body.getCategory();
-
+    private fun debugeeOutput(@Async.Execute dapEvent: DAPEvent) {
+        val outputEvent = dapEvent as DAPOutputEvent
+        val category = outputEvent.body.category
         if (category == null) {
-            logger.warn("Received invalid output event!");
-            return;
+            logger.warn("Received invalid output event!")
+            return
         }
-
-        ConsoleViewContentType contentType = switch (category) {
-            case IMPORTANT -> ConsoleViewContentType.LOG_ERROR_OUTPUT;
-            case CONSOLE -> ConsoleViewContentType.LOG_INFO_OUTPUT;
-            case STDOUT -> ConsoleViewContentType.NORMAL_OUTPUT;
-            case STDERR -> ConsoleViewContentType.ERROR_OUTPUT;
-            case TELEMETRY -> ConsoleViewContentType.LOG_DEBUG_OUTPUT;
-        };
-
-        if((contentType != ConsoleViewContentType.NORMAL_OUTPUT || contentType != ConsoleViewContentType.ERROR_OUTPUT) &&
-            !outputEvent.body.output.endsWith("\n")) {
-            outputEvent.body.output = outputEvent.body.output + "\n";
+        val contentType = when (category) {
+            OutputCategory.IMPORTANT -> ConsoleViewContentType.LOG_ERROR_OUTPUT
+            OutputCategory.CONSOLE -> ConsoleViewContentType.LOG_INFO_OUTPUT
+            OutputCategory.STDOUT -> ConsoleViewContentType.NORMAL_OUTPUT
+            OutputCategory.STDERR -> ConsoleViewContentType.ERROR_OUTPUT
+            OutputCategory.TELEMETRY -> ConsoleViewContentType.LOG_DEBUG_OUTPUT
         }
-
-        if (ConsoleViewContentType.SYSTEM_OUTPUT != contentType) this.myDebugeeConsole.print(outputEvent.body.output, contentType);
-        else logger.warn("Debugger output: " + category.name() + " " + outputEvent.body.output);
+        if ((contentType !== ConsoleViewContentType.NORMAL_OUTPUT || contentType !== ConsoleViewContentType.ERROR_OUTPUT) &&
+            !outputEvent.body.output.endsWith("\n")
+        ) {
+            outputEvent.body.output = outputEvent.body.output + "\n"
+        }
+        if (ConsoleViewContentType.SYSTEM_OUTPUT !== contentType) myDebugeeConsole.print(
+            outputEvent.body.output,
+            contentType
+        ) else logger.warn("Debugger output: ${category.name} ${outputEvent.body.output}")
     }
 
-    private void positionReached(@NotNull final DAPStoppedEvent stoppedEvent, @NotNull final DAPThreadsResponse threadInfo) {
-        logger.warn("Stopped execution: "+stoppedEvent);
+    private fun positionReached(stoppedEvent: DAPStoppedEvent, threadInfo: DAPThreadsResponse) {
+        CoroutineScope(Job() + Dispatchers.Default).launch {
+            try {
+                val suspendCtx = createSuspendContext(stoppedEvent, threadInfo)
 
-        Promise<XSuspendContext> suspendContext = createSuspendContext(stoppedEvent, threadInfo);
+                var hitBreakpoint: XLineBreakpoint<*>? = null
+                val hitRunToCursorBp: Boolean
 
-        final DAPStoppedEvent.StoppedEventBody stopped = stoppedEvent.body;
-
-        Promise<XLineBreakpoint<?>> tmpHitBP = null;
-        if (stopped.reason == DAPStoppedEvent.SoppedReason.BREAKPOINT ||
-            stopped.reason == DAPStoppedEvent.SoppedReason.FUNCTION_BREAKPOINT ||
-            stopped.reason == DAPStoppedEvent.SoppedReason.DATA_BREAKPOINT ||
-            stopped.reason == DAPStoppedEvent.SoppedReason.INSTRUCTION_BREAKPOINT) {
-            // Breakpoint hit
-
-            boolean isRTPBreakpoint = false; // is this the "runToPosition" helper breakpoint?
-
-            Integer[] hitBreakpointIds = stopped.hitBreakpointIds;
-            for (final Integer hitBreakpointId : hitBreakpointIds) {
-                if (runToPositionBreakpoint != null && Objects.equals(runToPositionBreakpoint.first, hitBreakpointId)) {
-                    isRTPBreakpoint = true;
-                    break;
-                }
-            }
-
-
-            for (final Integer hitBreakpointId : hitBreakpointIds) {
-                XLineBreakpoint<?> bp = idToBreakpointMap.get(hitBreakpointId);
-                if(bp != null) {
-                    tmpHitBP = Promises.resolvedPromise(bp);
-                    break;
-                }
-            }
-
-            if(isRTPBreakpoint) {
-                tmpHitBP = Promises.rejectedPromise();
-                removeBreakpoint(runToPositionBreakpoint.second, null);
-                runToPositionBreakpoint = null;
-            }
-
-
-            if(tmpHitBP == null) {
-                // Try to find bp by source position
-                AsyncPromise<XLineBreakpoint<?>> foundLineBp = new AsyncPromise<>();
-                tmpHitBP = foundLineBp;
-                suspendContext = suspendContext.then(suspendCtx -> {
-                    XExecutionStack[] stacks = suspendCtx.getExecutionStacks();
-                    XStackFrame topFrame = stacks.length > 0 && stacks[0] != null ? stacks[0].getTopFrame() : null;
-                    XSourcePosition sourcePosition = topFrame != null ? topFrame.getSourcePosition() : null;
-
-                    if(sourcePosition != null) {
-                        if (runToPositionBreakpoint != null && runToPositionBreakpoint.second != null &&
-                            Objects.equals(runToPositionBreakpoint.second.getFile().getUrl(), sourcePosition.getFile().getUrl()) &&
-                            runToPositionBreakpoint.second.getLine() == sourcePosition.getLine()) {
-                            // We hit a "runToPosition" breakpoint
-                            removeBreakpoint(runToPositionBreakpoint.second, null);
-                            runToPositionBreakpoint = null;
-                            foundLineBp.cancel();
-                        } else {
-                            XLineBreakpoint<?> lineBp = findBreakpoint(sourcePosition);
-                            if (lineBp != null)
-                                foundLineBp.setResult(lineBp);
-                            else
-                                foundLineBp.setError(String.format("No breakpoint found in %s line %d", sourcePosition.getFile().getUrl()
-                                    , sourcePosition.getLine()));
-                        }
+                val stoppedReason = stoppedEvent.body.reason
+                if (stoppedReason === DAPStoppedEvent.SoppedReason.BREAKPOINT ||
+                    stoppedReason === DAPStoppedEvent.SoppedReason.FUNCTION_BREAKPOINT ||
+                    stoppedReason === DAPStoppedEvent.SoppedReason.DATA_BREAKPOINT ||
+                    stoppedReason === DAPStoppedEvent.SoppedReason.INSTRUCTION_BREAKPOINT
+                ) {
+                    hitRunToCursorBp = stoppedEvent.body.hitBreakpointIds.contains(runToPositionBreakpoint?.first)
+                    if (hitRunToCursorBp) {
+                        removeBreakpoint(runToPositionBreakpoint!!.second, null)
+                        runToPositionBreakpoint = null
                     } else {
-                        foundLineBp.setError("No source position");
-                    }
-                    return suspendCtx;
-                });
-            }
-        } else {
-            tmpHitBP = Promises.rejectedPromise();
-        }
-
-        final Promise<XLineBreakpoint<?>> hitBP = tmpHitBP;
-
-        suspendContext.onSuccess(suspendCtx -> {
-            hitBP.onSuccess(myHitBP -> {
-                boolean shouldSuspend = this.getSession().breakpointReached(myHitBP, null, suspendCtx);
-                if (!shouldSuspend)
-                    this.resume(suspendCtx);
-            }).onError(
-                err -> {
-                    XDebugSession session = FactorioDebugProcess.this.getSession();
-                    if(session instanceof XDebugSessionImpl) ((XDebugSessionImpl) session).positionReached(suspendCtx, true);
-                    else session.positionReached(suspendCtx);
-                });
-        }).onError(err -> {
-            logger.warn("Unable to stop because suspend context creation failed with", err);
-            FactorioDebugProcess.this.resume(null);
-        });
-    }
-
-    private Promise<XSuspendContext> createSuspendContext(@NotNull DAPStoppedEvent stoppedEvent, @NotNull DAPThreadsResponse threadInfo) {
-        if(stoppedEvent.body.allThreadsStopped != null && stoppedEvent.body.allThreadsStopped) {
-            return FactorioSuspendContext.fromThreads(threadInfo.body.threads, this);
-        } else {
-            DAPThread[] threads = new DAPThread[1];
-            for(DAPThread th : threadInfo.body.threads) {
-                if(Objects.equals(th.id, stoppedEvent.body.threadId)) {
-                    threads[0] = th;
-                    break;
-                }
-            }
-
-            return FactorioSuspendContext.fromThreads(threads, this);
-        }
-    }
-
-    private @Nullable XLineBreakpoint<?> findBreakpoint(@NotNull XSourcePosition sourcePosition) {
-        for (final Map.Entry<Integer, XLineBreakpoint<?>> integerXLineBreakpointEntry : idToBreakpointMap.entrySet()) {
-            XLineBreakpoint<?> bp = integerXLineBreakpointEntry.getValue();
-            if(Objects.equals(bp.getFileUrl(), sourcePosition.getFile().getUrl()) &&
-                bp.getLine() == sourcePosition.getLine()) {
-                return bp;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public boolean checkCanInitBreakpoints() {
-        return this.myDebugger.isInitialized();
-    }
-
-    @Override
-    public void sessionInitialized() {
-        FactorioDebugProcess.this.myDebugger.launch();
-    }
-
-    @Override
-    protected @Nullable ProcessHandler doGetProcessHandler() {
-        return this.myProcessHandler;
-    }
-
-    @Override
-    public @NotNull ExecutionConsole createConsole() {
-        return this.myDebugeeConsole;
-    }
-
-    @Override
-    public XBreakpointHandler<?> @NotNull [] getBreakpointHandlers() {
-        return this.myBreakpointHandlers;
-    }
-
-    @Override
-    public @NotNull XDebuggerEditorsProvider getEditorsProvider() {
-        return this.myEditorsProvider;
-    }
-
-    @Override
-    public @Nullable XDebuggerEvaluator getEvaluator() {
-        XStackFrame frame = this.getSession().getCurrentStackFrame();
-        return frame != null ? frame.getEvaluator() : null;
-    }
-
-    @Override
-    public void startStepOver(@Nullable XSuspendContext context) {
-        this.myDebugger.stepOver();
-    }
-    @Override
-    public void startStepOut(@Nullable XSuspendContext context) {
-        this.myDebugger.stepOut();
-    }
-
-    @Override
-    public void startStepInto(@Nullable final XSuspendContext context) {
-        this.myDebugger.stepInto(null);
-    }
-
-    @Override
-    public @Nullable XSmartStepIntoHandler<FactorioSmartStepIntoVariant> getSmartStepIntoHandler() {
-        if(this.hasCapability(DAPCapabilitiesEnum.StepInTargetsRequest)) {
-            return mySmartStepIntoHandler;
-        }
-        return null;
-    }
-
-    @Override
-    public @NotNull Promise<Object> stopAsync() {
-        if (!this.hasCapability(DAPCapabilitiesEnum.TerminateRequest)) {
-            this.myDebugger.setTerminating();
-            return Promises.rejectedPromise();
-        }
-        return this.myDebugger.stop().then(r -> r);
-    }
-
-    @Override
-    public void startPausing() {
-        this.myDebugger.startPausing();
-    }
-
-    @Override
-    public void resume(@Nullable final XSuspendContext context) {
-        this.myDebugger.resume();
-    }
-
-    @Override
-    public void runToPosition(@NotNull final XSourcePosition position, @Nullable final XSuspendContext context) {
-        //runToPositionBreakpoint = new Pair<>(-1, position);
-        XSourcePosition convertedPosition = this.myPositionConverter.convertToFactorio(position);
-        this.myDebugger.getBreakpointLocations(convertedPosition.getFile(), convertedPosition.getLine(), -1).onProcessed(bpLocations -> {
-            DAPBreakpointLocation[] bps = bpLocations != null && bpLocations.body != null && bpLocations.body.breakpoints != null ? bpLocations.body.breakpoints : null;
-            int line = bps != null && bps.length > 0 ? bps[0].line : -1;
-
-            if (convertedPosition.getLine() == line) {
-                addInvisibleTemporaryBreakpoint(convertedPosition)
-                    .onSuccess(rtpBp -> {
-                        Object id = rtpBp.additionalProperties.get("id");
-                        if(id instanceof Integer) {
-                            runToPositionBreakpoint = new Pair<>((Integer) id, position);
-                            resume(context);
+                        for (hitBreakpointId in stoppedEvent.body.hitBreakpointIds) {
+                            val bp = idToBreakpointMap[hitBreakpointId]
+                            if (bp != null) {
+                                hitBreakpoint = bp
+                                break
+                            }
                         }
-                    })
-                    .onError(err -> this.getSession().reportError("Unable to run to position: failed to create helper breakpoint: "+ err));
-            } else {
-                AppUIExecutor.onUiThread().submit(() ->
-                    MessagesService.getInstance().showErrorDialog(
-                        this.getSession().getProject(),
-                        String.format("No executable code found at\n%s:%s", position.getFile().getName(), position.getLine()), "Run To Cursor"));
-                //final Collection<NotificationGroup> registeredNotificationGroups = NotificationGroupManager.getInstance().getRegisteredNotificationGroups();
-                //NotificationGroupManager.getInstance().getNotificationGroup("JavaEE execution issue");
-                //this.getSession().reportError("No source code found in line " + position.getLine());
-            }
-        });
-    }
 
-    public void reregisterBreakpoints() {
-        ((FactorioLineBreakpointHandler)this.myBreakpointHandlers[0]).reregisterBreakpoints();
-    }
+                        if (hitBreakpoint == null) {
+                            // Try to guess which breakpoint has been hit
+                            val stacks = suspendCtx.executionStacks
+                            val sourcePosition = if (stacks.isNotEmpty()) stacks[0].topFrame?.sourcePosition else null
+                            sourcePosition?.let {
+                                if (XSourcePosition.isOnTheSameLine(runToPositionBreakpoint?.second, sourcePosition)) {
+                                    // We hit a "runToPosition" breakpoint
+                                    removeBreakpoint(runToPositionBreakpoint!!.second, null)
+                                    runToPositionBreakpoint = null
+                                } else {
+                                    hitBreakpoint = findBreakpoint(sourcePosition)
+                                }
+                            }
+                        }
+                    }
+                }
 
-    private Promise<DAPSourceBreakpoint> addInvisibleTemporaryBreakpoint(final XSourcePosition convertedPosition) {
-        // TODO check for acceptable breakpoint locations
-        return this.myDebugger.addBreakpoint(convertedPosition, null);
-    }
-
-    public void addBreakpoint(final XSourcePosition position, final XLineBreakpoint<?> breakpoint) {
-        XSourcePosition convertedPosition = this.myPositionConverter.convertToFactorio(position);
-        this.myDebugger.addBreakpoint(convertedPosition, breakpoint)
-            .onSuccess(bpResult ->
-                handleBreakpointResponse(bpResult, breakpoint))
-            .onError(error ->
-                handleBreakpointResponse(null, breakpoint));
-    }
-
-    public void removeBreakpoint(final XSourcePosition position, final XLineBreakpoint<?> breakpoint) {
-        XSourcePosition convertedPosition = this.myPositionConverter.convertToFactorio(position);
-        this.myDebugger.removeBreakpoint(convertedPosition, breakpoint);
-    }
-
-    private void handleBreakpointResponse(@Nullable DAPSourceBreakpoint bpResponse, XLineBreakpoint<?> breakpoint) {
-        if(bpResponse != null) {
-            Object id = bpResponse.additionalProperties.get("id");
-            if(id instanceof Integer) idToBreakpointMap.put((Integer) id, breakpoint);
-            if(Boolean.TRUE.equals(bpResponse.additionalProperties.get("verified"))) {
-                FactorioDebugProcess.this.getSession().setBreakpointVerified(breakpoint);
-                return;
+                if (hitBreakpoint != null) {
+                    val shouldSuspend = this@FactorioDebugProcess.session.breakpointReached(hitBreakpoint!!, null, suspendCtx)
+                    if (!shouldSuspend) resume(suspendCtx)
+                } else {
+                    val session = this@FactorioDebugProcess.session
+                    if (session is XDebugSessionImpl) session.positionReached(suspendCtx, true) else session.positionReached(suspendCtx)
+                }
+            } catch (err: Throwable) {
+                logger.warn("Unable to stop because suspend context creation failed with", err)
+                this@FactorioDebugProcess.resume(null)
             }
         }
-        FactorioDebugProcess.this.getSession().setBreakpointInvalid(breakpoint, "Unable to verify");
     }
 
-    private void handleBreakpointEvent(@Async.Execute final DAPEvent dapEvent) {
-        DAPBreakpointEvent breakpointEvent = (DAPBreakpointEvent) dapEvent;
-        if(breakpointEvent == null || breakpointEvent.body == null) return;
+    private suspend fun createSuspendContext(stoppedEvent: DAPStoppedEvent, threadInfo: DAPThreadsResponse): XSuspendContext {
+        return if (stoppedEvent.body.allThreadsStopped != null && stoppedEvent.body.allThreadsStopped!!) {
+            FactorioSuspendContext.fromThreads(threadInfo.body.threads, this).await()
+        } else {
+            val threads = arrayOfNulls<DAPThread>(1)
+            for (th in threadInfo.body.threads) {
+                if (th.id == stoppedEvent.body.threadId) {
+                    threads[0] = th
+                    break
+                }
+            }
+            FactorioSuspendContext.fromThreads(threads, this).await()
+        }
+    }
 
-        String reason = breakpointEvent.body.reason;
-        DAPBreakpoint bp = breakpointEvent.body.breakpoint;
+    private fun findBreakpoint(sourcePosition: XSourcePosition): XLineBreakpoint<*>? {
+        for ((_, bp) in idToBreakpointMap) {
+            if (bp.fileUrl == sourcePosition.file.url &&
+                bp.line == sourcePosition.line
+            ) {
+                return bp
+            }
+        }
+        return null
+    }
 
-        if(bp != null && bp.id != null) {
-            XLineBreakpoint<?> lineBP = idToBreakpointMap.get(bp.id);
-            if(lineBP != null) {
-                if(bp.verified) {
-                    this.getSession().setBreakpointVerified(lineBP);
+    override fun checkCanInitBreakpoints(): Boolean {
+        return myDebugger.isInitialized
+    }
+
+    override fun sessionInitialized() {
+        myDebugger.launch()
+    }
+
+    override fun doGetProcessHandler(): ProcessHandler? {
+        return this.myProcessHandler
+    }
+
+    override fun createConsole(): ExecutionConsole {
+        return myDebugeeConsole
+    }
+
+    override fun getBreakpointHandlers(): Array<XBreakpointHandler<*>> {
+        return myBreakpointHandlers
+    }
+
+    override fun getEditorsProvider(): XDebuggerEditorsProvider {
+        return myEditorsProvider
+    }
+
+    override fun getEvaluator(): XDebuggerEvaluator? {
+        val frame = this.session.currentStackFrame
+        return frame?.evaluator
+    }
+
+    override fun startStepOver(context: XSuspendContext?) {
+        myDebugger.stepOver()
+    }
+
+    override fun startStepOut(context: XSuspendContext?) {
+        myDebugger.stepOut()
+    }
+
+    override fun startStepInto(context: XSuspendContext?) {
+        myDebugger.stepInto(null)
+    }
+
+    override fun getSmartStepIntoHandler(): XSmartStepIntoHandler<FactorioSmartStepIntoVariant>? {
+        return if (hasCapability(DAPCapabilitiesEnum.StepInTargetsRequest)) {
+            mySmartStepIntoHandler
+        } else null
+    }
+
+    override fun stopAsync(): Promise<Any> {
+        if (!hasCapability(DAPCapabilitiesEnum.TerminateRequest)) {
+            myDebugger.setTerminating()
+            return rejectedPromise()
+        }
+        return myDebugger.stop().then { r: DAPTerminateResponse -> r }
+    }
+
+    override fun startPausing() {
+        myDebugger.startPausing()
+    }
+
+    override fun resume(context: XSuspendContext?) {
+        myDebugger.resume()
+    }
+
+    override fun runToPosition(position: XSourcePosition, context: XSuspendContext?) {
+        //runToPositionBreakpoint = new Pair<>(-1, position);
+        val convertedPosition = myPositionConverter.convertToFactorio(position)
+        myDebugger.getBreakpointLocations(convertedPosition.file, convertedPosition.line, -1)
+            .onProcessed { bpLocations: DAPBreakpointLocationsResponse? ->
+                val bps = bpLocations?.body?.breakpoints
+                val line = if (!bps.isNullOrEmpty()) bps[0].line else -1
+                if (convertedPosition.line == line) {
+                    addInvisibleTemporaryBreakpoint(convertedPosition)
+                        .onSuccess { rtpBp: DAPSourceBreakpoint ->
+                            val id = rtpBp.additionalProperties["id"]
+                            if (id is Int) {
+                                runToPositionBreakpoint = Pair(id, position)
+                                resume(context)
+                            }
+                        }
+                        .onError { err: Throwable -> this.session.reportError("Unable to run to position: failed to create helper breakpoint: $err") }
                 } else {
-                    this.getSession().setBreakpointInvalid(lineBP, bp.message != null ? bp.message : "Unable to verify");
+                    AppUIExecutor.onUiThread().submit {
+                        MessagesService.getInstance().showErrorDialog(
+                            this.session.project,
+                            "No executable code found at\n${position.file.name}:${position.line}",
+                            "Run To Cursor"
+                        )
+                    }
+                    //final Collection<NotificationGroup> registeredNotificationGroups = NotificationGroupManager.getInstance().getRegisteredNotificationGroups();
+                    //NotificationGroupManager.getInstance().getNotificationGroup("JavaEE execution issue");
+                    //this.getSession().reportError("No source code found in line " + position.getLine());
+                }
+            }
+    }
+
+    fun reregisterBreakpoints() {
+        (myBreakpointHandlers[0] as FactorioLineBreakpointHandler).reregisterBreakpoints()
+    }
+
+    private fun addInvisibleTemporaryBreakpoint(convertedPosition: XSourcePosition): Promise<DAPSourceBreakpoint> {
+        // TODO check for acceptable breakpoint locations
+        return myDebugger.addBreakpoint(convertedPosition, null)
+    }
+
+    fun addBreakpoint(position: XSourcePosition?, breakpoint: XLineBreakpoint<*>) {
+        val convertedPosition = myPositionConverter.convertToFactorio(position!!)
+        myDebugger.addBreakpoint(convertedPosition, breakpoint)
+            .onSuccess { bpResult: DAPSourceBreakpoint? -> handleBreakpointResponse(bpResult, breakpoint) }
+            .onError { _: Throwable? -> handleBreakpointResponse(null, breakpoint) }
+    }
+
+    fun removeBreakpoint(position: XSourcePosition?, breakpoint: XLineBreakpoint<*>?) {
+        val convertedPosition = myPositionConverter.convertToFactorio(position!!)
+        myDebugger.removeBreakpoint(convertedPosition, breakpoint)
+    }
+
+    private fun handleBreakpointResponse(bpResponse: DAPSourceBreakpoint?, breakpoint: XLineBreakpoint<*>) {
+        if (bpResponse != null) {
+            val id = bpResponse.additionalProperties["id"]
+            if (id is Int) idToBreakpointMap[id] = breakpoint
+            if (java.lang.Boolean.TRUE == bpResponse.additionalProperties["verified"]) {
+                this@FactorioDebugProcess.session.setBreakpointVerified(breakpoint)
+                return
+            }
+        }
+        this@FactorioDebugProcess.session.setBreakpointInvalid(breakpoint, "Unable to verify")
+    }
+
+    private fun handleBreakpointEvent(@Async.Execute dapEvent: DAPEvent) {
+        val breakpointEvent = dapEvent as DAPBreakpointEvent
+        val bp = breakpointEvent.body?.breakpoint
+        if (bp?.id != null) {
+            val lineBP = idToBreakpointMap[bp.id]
+            if (lineBP != null) {
+                if (bp.verified) {
+                    this.session.setBreakpointVerified(lineBP)
+                } else {
+                    this.session.setBreakpointInvalid(lineBP, if (bp.message != null) bp.message else "Unable to verify")
                 }
             }
         }
     }
 
-    public @NotNull FactorioSourcePosition getSourcePosition(final @Nullable String path, int line) {
-        return this.myPositionConverter.getFactorioSourcePosition(path, line);
+    fun getSourcePosition(path: String?, line: Int): FactorioSourcePosition {
+        return myPositionConverter.getFactorioSourcePosition(path, line)
     }
 
-    public Promise<DAPScopesResponse> getScope(final int frameId) {
-        return this.myDebugger.getScope(frameId);
+    fun getScope(frameId: Int): Promise<DAPScopesResponse> {
+        return myDebugger.getScope(frameId)
     }
 
-    public Promise<DAPVariablesResponse> getVariable(int varRev, final int offset, final int maxResults) {
-        return this.myDebugger.getVariable(varRev, offset, maxResults);
+    fun getVariable(varRev: Int, offset: Int, maxResults: Int): Promise<DAPVariablesResponse> {
+        return myDebugger.getVariable(varRev, offset, maxResults)
     }
 
-    public Promise<DAPStackTraceResponse> getStackTrace(final int id) {
-        return this.myDebugger.getStackTrace(id);
+    fun getStackTrace(id: Int): Promise<DAPStackTraceResponse> {
+        return myDebugger.getStackTrace(id)
     }
 
-    public String toJSON(final Object dapMsg) {
-        return this.myDebugger.toJSON(dapMsg);
+    fun toJSON(dapMsg: Any?): String {
+        return myDebugger.toJSON(dapMsg)
     }
 
-    public Promise<DAPEvaluateResponse> evaluate(@NotNull final String expression,
-                                                 final int frameId,
-                                                 @Nullable final DAPEvaluateRequest.EvalContext context) {
-        return this.myDebugger.evaluate(expression, frameId, context);
+    fun evaluate(
+        expression: String,
+        frameId: Int,
+        context: EvalContext?
+    ): Promise<DAPEvaluateResponse> {
+        return myDebugger.evaluate(expression, frameId, context)
     }
 
-    public Promise<DAPCompletionsResponse> getCompletions(final String text, final int myFrameId, final int line, final int column) {
-        return this.myDebugger.getCompletions(text, myFrameId, line, column);
+    fun getCompletions(text: String?, myFrameId: Int, line: Int, column: Int): Promise<DAPCompletionsResponse> {
+        return myDebugger.getCompletions(text, myFrameId, line, column)
     }
 
-    public Promise<DAPStepInTargetsResponse> getStepIntoTargets(@NotNull final FactorioStackFrame frameId) {
-        return this.myDebugger.getStepIntoTargets(frameId.getStackFrameId());
+    fun getStepIntoTargets(frameId: FactorioStackFrame): Promise<DAPStepInTargetsResponse> {
+        return myDebugger.getStepIntoTargets(frameId.stackFrameId)
     }
 
-    public void stepInto(final FactorioSmartStepIntoVariant variant) {
-        this.myDebugger.stepInto(variant.getTargetId());
+    fun stepInto(variant: FactorioSmartStepIntoVariant) {
+        myDebugger.stepInto(variant.targetId)
     }
 
-    public Promise<DAPVariable> setValue(final @Nullable FactorioVariableContainer myParent, final @NotNull String myVariableName, final String expression) {
-        Promise<DAPVariable> res = this.setExpression(myVariableName, expression, this.getCurrentFrame())
-                .then(evalRes -> evalRes != null ? evalRes.body.toVariable() : null);
-
-        if(res.getState() == Promise.State.REJECTED && !this.hasCapability(DAPCapabilitiesEnum.SetVariable)) {
-            return Promises.rejectedPromise("Operation not supported");
+    fun setValue(myParent: FactorioVariableContainer?, myVariableName: String, expression: String): Promise<DAPVariable?> {
+        val res = setExpression(myVariableName, expression, currentFrame)
+            .then { evalRes: DAPSetExpressionResponse? -> evalRes?.body?.toVariable() }
+        if (res.state == Promise.State.REJECTED && !hasCapability(DAPCapabilitiesEnum.SetVariable)) {
+            return rejectedPromise("Operation not supported")
         }
+        return if (myParent == null) {
+            rejectedPromise("This variable cant be changed because it has no parent!")
+        } else myDebugger.setValue(myParent.referenceId, myVariableName, expression)
+            .then { setValRes: DAPSetVariableResponse? -> setValRes?.body?.toVariable() }
+    }
 
-        if (myParent == null) {
-            return Promises.rejectedPromise("This variable cant be changed because it has no parent!");
+    private fun setExpression(
+        evaluationExpression: String,
+        expression: String,
+        currentFrame: FactorioStackFrame?
+    ): Promise<DAPSetExpressionResponse> {
+        return if (!hasCapability(DAPCapabilitiesEnum.SetExpression)) {
+            rejectedPromise("Operation not supported")
+        } else myDebugger.setExpression(
+            evaluationExpression,
+            expression,
+            currentFrame?.stackFrameId
+        )
+    }
+
+    private val currentFrame: FactorioStackFrame?
+        get() {
+            val ctx = this.session.suspendContext
+            val stack = ctx?.activeExecutionStack
+            val frame = stack?.topFrame
+            return if (frame is FactorioStackFrame) frame else null
         }
-
-        return this.myDebugger.setValue(myParent.getReferenceId(), myVariableName, expression)
-            .then(setValRes -> setValRes != null ? setValRes.body.toVariable() : null);
-    }
-
-    private Promise<DAPSetExpressionResponse> setExpression(@NotNull final String evaluationExpression,
-                                                            @NotNull final String expression,
-                                                            @Nullable final FactorioStackFrame currentFrame) {
-        if(!this.hasCapability(DAPCapabilitiesEnum.SetExpression)) {
-            return Promises.rejectedPromise("Operation not supported");
-        }
-        return this.myDebugger.setExpression(evaluationExpression, expression, currentFrame != null ? currentFrame.getStackFrameId() : null);
-    }
-
-    private @Nullable FactorioStackFrame getCurrentFrame() {
-        XSuspendContext ctx = this.getSession().getSuspendContext();
-        XExecutionStack stack = ctx != null? ctx.getActiveExecutionStack() : null;
-        XStackFrame frame = stack != null ? stack.getTopFrame() : null;
-        return frame instanceof FactorioStackFrame ? (FactorioStackFrame) frame : null;
-    }
 }
