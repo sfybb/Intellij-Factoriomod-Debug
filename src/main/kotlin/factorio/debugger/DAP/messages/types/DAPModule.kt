@@ -75,6 +75,6 @@ class DAPModule : DAPAdditionalProperties() {
     var addressRange: String? = null
 
     override fun toString(): String {
-        return "$id${version?.let{" v$it"}}${path?.let{" ($it)"}}"
+        return "$id${version?.let{" v$it"} ?: ""}${path?.let{" ($it)"} ?: ""}"
     }
 }

@@ -1,16 +1,13 @@
 package factorio.debugger.game
 
-import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.modules
-import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.vfs.JarFileSystem
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.xdebugger.XDebuggerUtil
 import com.intellij.xdebugger.XSourcePosition
 import factorio.debugger.DAP.messages.types.DAPModule
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.exists
 
@@ -136,7 +133,10 @@ class FactorioMod(private val myId: String, private val myName: String, private 
 
         // TODO factorio path to lua
         val script = myScripts[relPath] ?: return fPosition
-        return script.convertFactorioToSource(fPosition)
+        val convertedPosition = script.convertFactorioToSource(fPosition.line, relPath)
+
+        val vFile = getSourceFile(convertedPosition.second)
+        return XDebuggerUtil.getInstance().createPosition(vFile, convertedPosition.first) ?: fPosition
     }
 
     /**
@@ -152,9 +152,11 @@ class FactorioMod(private val myId: String, private val myName: String, private 
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
         val relSPath = relativizePath(Path.of(sPosition.file.path))
 
-        // TODO convert lua path to factorio
-        val script = myScripts[mySourceMappedFiles[relSPath]] ?: return sPosition
-        return script.convertSourceToFactorio(sPosition)
+        val script = myScripts[mySourceMappedFiles[relSPath]] ?: myScripts[relSPath] ?: return sPosition
+        val convertedPosition = script.convertSourceToFactorio(sPosition.line, relSPath)
+
+        val vFile = getFile(convertedPosition.second)
+        return XDebuggerUtil.getInstance().createPosition(vFile, convertedPosition.first) ?: sPosition
     }
 
     fun containsFile(sFile: Path): Boolean {
@@ -175,55 +177,18 @@ class FactorioMod(private val myId: String, private val myName: String, private 
     }
 
     companion object {
-        private val DIRECTORIES_TO_IGNORE = setOf("node_modules", ".git", ".idea", ".vscode")
-
-        /**
-         * @return returns the path of the mod inside the current project or null if it is not inside the project
-         */
-        private fun modToProjectPath(modRootFile: VirtualFile, myProject: Project): Path? {
-            val infoJson = modRootFile.findChild("info.json")
-            val infoJsonPath = infoJson?.toNioPath() ?: return null
-
-            var foundInfoJson: Path? = null
-            for (module in myProject.modules) {
-                // TODO cache infoJson's
-
-                if (foundInfoJson != null) break
-                for (contentRoot in module.rootManager.contentRoots) {
-                    VfsUtilCore.iterateChildrenRecursively(contentRoot,
-                        { file -> if (file.isDirectory) !DIRECTORIES_TO_IGNORE.contains(file.name) else file.name == "info.json" },
-                        { fileOrDir ->
-                            if (Files.isSameFile(infoJsonPath, fileOrDir.toNioPath())) {
-                                foundInfoJson = fileOrDir.toNioPath()
-                            }
-                            foundInfoJson == null
-                            })
-
-                    if (foundInfoJson != null) {
-                        val contentRootPath = contentRoot.toNioPath()
-                        foundInfoJson = contentRootPath.resolve(contentRootPath.relativize(foundInfoJson!!))
-                    }
-                }
-            }
-            return foundInfoJson?.parent
-        }
-        fun fromModule(module: DAPModule, myProject: Project, factorioEnv: FactorioGameRuntimeEnvironment): FactorioMod? {
+        public val DIRECTORIES_TO_IGNORE = setOf("node_modules", ".git", ".idea", ".vscode")
+        fun fromModule(module: DAPModule, projectPath: Path?, factorioEnv: FactorioGameRuntimeEnvironment): FactorioMod? {
             if (module.id == "#user") return null
 
             val pathString = module.path ?: module.symbolFilePath
 
             val path: Path
             val modRootFile: VirtualFile?
-            val projectPath: Path?
             if (pathString != null) {
                 path = Path.of(URI.create(pathString).path)
                 modRootFile = LocalFileSystem.getInstance().findFileByPath(path.toString())
-
-                projectPath = if (modRootFile != null) {
-                    modToProjectPath(modRootFile, myProject)
-                } else null
             }  else {
-                projectPath = null
                 path = Path.of(factorioEnv.modFolder, module.id + "_" + module.version + ".zip")
                 val modZipFile = LocalFileSystem.getInstance().findFileByPath(path.toString())
 

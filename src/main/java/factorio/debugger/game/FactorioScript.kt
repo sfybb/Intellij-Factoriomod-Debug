@@ -4,8 +4,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.Url
 import com.intellij.util.Urls
 import com.intellij.util.Urls.newLocalFileUrl
-import com.intellij.xdebugger.XDebuggerUtil
-import com.intellij.xdebugger.XSourcePosition
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.IOUtils
@@ -18,16 +16,20 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Path
 import java.security.MessageDigest
 
-class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile, relativePath: Path) {
+class FactorioScript(val myMod: FactorioMod, private val myScriptFile: VirtualFile, private val myRelativePath: Path) {
     private val mySourceMap: SourceMap?
     init {
-        val sourceMapPath = relativePath.resolveSibling(relativePath.fileName.toString() + ".map")
-        val sourceMapFile = mod.getRelativeFile(sourceMapPath)
+        val sourceMapPath = myRelativePath.resolveSibling(myRelativePath.fileName.toString() + ".map")
+        val sourceMapFile = myMod.getRelativeFile(sourceMapPath)
 
         mySourceMap = if (sourceMapFile?.exists() == true) {
-            val fileContent = IOUtils.toString(sourceMapFile.inputStream, StandardCharsets.UTF_8)
-            decodeSourceMapSafely(fileContent, true,
-                newLocalFileUrl(sourceMapFile.path), true)
+            try {
+                val fileContent = IOUtils.toString(sourceMapFile.inputStream, StandardCharsets.UTF_8)
+                decodeSourceMapSafely(fileContent, true,
+                    newLocalFileUrl(sourceMapFile.path), true)
+            } catch (e: IOException) {
+                null
+            }
         } else {
             null
         }
@@ -51,55 +53,55 @@ class FactorioScript(val mod: FactorioMod, private val myScriptFile: VirtualFile
         get() = mySourceMap?.sources?.map { Path.of(it.path) } ?: listOf(Path.of(myScriptFile.path).toAbsolutePath())
 
     /**
-     * Converts the line number [fPosition] from the Factorio lua script to the associated source file line.
+     * Converts the line number [fLine] and path [fPath] from the Factorio lua script to the associated source file line.
      * If this script has no source map the position is unchanged otherwise the source mapped line is returned
      * This is the inverse of [convertSourceToFactorio]
      *
-     * @param fPosition the position in the factorio lua script
+     * @param fLine the line in the source file
+     * @param fPath the path to the lua script relative to the mod root
      * @return the position in the associated source file
      */
-    fun convertFactorioToSource(fPosition: XSourcePosition): XSourcePosition {
+    fun convertFactorioToSource(fLine: Int, fPath: Path): Pair<Int, Path> {
         // TODO move to correct position in FactorioLocalPositionConverter
         // fmtk starts lines at 1 but jetbrains starts at 0 (fmtk doens't support "linesStartAt1=false" in the initialize request)
-        if (mySourceMap == null) return fPosition
 
-        val entry = mySourceMap.generatedMappings.get(fPosition.line, 1)
+        val entry = mySourceMap?.generatedMappings?.get(fLine, 1)
 
-        if (entry != null) {
+        if (entry != null && mySourceMap != null) {
             val fileUrl = mySourceMap.sources[entry.source]
             if (fileUrl.isInLocalFileSystem) {
-                val vFile = mod.getSourceFile(Path.of(fileUrl.path))
-                return XDebuggerUtil.getInstance().createPosition(vFile, entry.sourceLine) ?: fPosition
+                return Pair(entry.sourceLine, Path.of(fileUrl.path))
             }
         }
-        return fPosition
+        return fLine to fPath
     }
 
     /**
-     * Converts the line number [sPosition] from the source file to the associated Factorio lua script line
+     * Converts the line number [sLine] and path [sPath] from the source file to the associated Factorio lua script line
      * If this script has no source map the position is unchanged otherwise the reverse source mapped line is returned
      * This is the inverse of [convertFactorioToSource]
      *
-     * @param sPosition the position in the source file
+     * @param sLine the line in the source file
+     * @param sPath the path to the source file relative to the mod root
      * @return the line in the associated source file
      */
-    fun convertSourceToFactorio(sPosition: XSourcePosition): XSourcePosition? {
-        if (mySourceMap == null) return sPosition
+    fun convertSourceToFactorio(sLine: Int, sPath: Path): Pair<Int, Path> {
+        val fileUrl: Url? = Urls.parseEncoded(sPath.toString())
+        val urlIndx = fileUrl?.let { mySourceMap?.sourceResolver?.getSourceIndex(it) } ?: -1
 
-        val fileUrl: Url? = Urls.parseEncoded(sPosition.file.url)
-        val urlIndx = if (fileUrl != null) mySourceMap.sourceResolver.getSourceIndex(fileUrl) else -1
-
-        if (urlIndx >= 0) {
+        if (urlIndx >= 0 && mySourceMap != null) {
             val mappings  = mySourceMap.findSourceMappings(urlIndx)
 
             val entry: MappingEntry? = if (mappings is MappingList) {
-                mappings.getMappingsInLine(sPosition.line).first()
+                mappings.getMappingsInLine(sLine).first()
             } else {
-                mappings.get(sPosition.line, 1)
+                mappings.get(sLine, 1)
             }
 
-            return if (entry != null) XDebuggerUtil.getInstance().createPosition(myScriptFile, entry.generatedLine) else sPosition
+            if (entry != null) {
+                return entry.generatedLine to myRelativePath
+            }
         }
-        return sPosition
+        return sLine to sPath
     }
 }

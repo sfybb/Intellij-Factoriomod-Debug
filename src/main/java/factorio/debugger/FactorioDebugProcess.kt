@@ -107,19 +107,22 @@ class FactorioDebugProcess(
                 super.sessionStopped()
             }
         })
-        myDebugger.setEventHandler(DAPEventNames.STOPPED) { stoppedEvent: DAPEvent ->
-            myDebugger.threads.onProcessed { threads: DAPThreadsResponse -> positionReached(stoppedEvent as DAPStoppedEvent, threads) }
+        myDebugger.setEventHandler(DAPEventNames.STOPPED) {
+            myDebugger.threads.onProcessed { threads: DAPThreadsResponse -> positionReached(it as DAPStoppedEvent, threads) }
         }
-        myDebugger.setEventHandler(DAPEventNames.OUTPUT) { dapEvent: DAPEvent -> debugeeOutput(dapEvent) }
-        myDebugger.setEventHandler(DAPEventNames.MODULE) { event: DAPEvent ->
-            myPositionConverter.addModule(event as DAPModuleEvent, myFactorioGameRuntimeEnv)
+        myDebugger.setEventHandler(DAPEventNames.OUTPUT) { debugeeOutput(it) }
+        myDebugger.setEventHandler(DAPEventNames.MODULE) {
+            myPositionConverter.addModule(it as DAPModuleEvent, myFactorioGameRuntimeEnv)
         }
-        myDebugger.setEventHandler(DAPEventNames.INITIALIZED) { initMsg: DAPEvent ->
-            initialize(myDebugger.capabilities, initMsg.sequence)
+        myDebugger.setEventHandler(DAPEventNames.LOADEDSOURCE) {
+            myPositionConverter.addScript(it as DAPLoadedSourceEvent)
         }
-        myDebugger.setEventHandler(DAPEventNames.BREAKPOINT) { dapEvent: DAPEvent -> handleBreakpointEvent(dapEvent) }
-        myDebugger.setEventHandler(DAPEventNames.TERMINATED) { ignored: DAPEvent ->
-            logger.info(ignored.toString())
+        myDebugger.setEventHandler(DAPEventNames.INITIALIZED) {
+            initialize(myDebugger.capabilities, it.sequence)
+        }
+        myDebugger.setEventHandler(DAPEventNames.BREAKPOINT) { handleBreakpointEvent(it) }
+        myDebugger.setEventHandler(DAPEventNames.TERMINATED) {
+            logger.info(it.toString())
             session.stop()
         }
     }
