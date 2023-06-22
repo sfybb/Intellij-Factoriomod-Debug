@@ -53,7 +53,7 @@ public final class FactorioUtil {
 
     public static @Nullable String getHomePathFromExec(final String execPathStr) {
         Path execPath = Path.of(execPathStr);
-        if(Files.isExecutable(execPath)) {
+        if(Files.isExecutable(execPath) && execPath.getParent() != null) {
             Path homePath = execPath.getParent().resolve(Path.of("..", "..")).normalize().toAbsolutePath();
             return checkForFactorio(homePath) ? homePath.toString() : null;
         }
