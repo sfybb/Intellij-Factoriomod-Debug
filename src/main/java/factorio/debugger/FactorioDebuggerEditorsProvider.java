@@ -3,6 +3,7 @@ package factorio.debugger;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import com.intellij.openapi.fileTypes.UnknownFileType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import com.intellij.lang.Language;
@@ -22,7 +23,9 @@ import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider;
 public class FactorioDebuggerEditorsProvider extends XDebuggerEditorsProvider {
     @Override
     public @NotNull FileType getFileType() {
-        return FileTypeRegistry.getInstance().getFileTypeByExtension("lua");
+        FileTypeRegistry ftr = FileTypeRegistry.getInstance();
+        FileType lua = ftr.getFileTypeByExtension("Lua");
+        return !lua.getName().equals(UnknownFileType.INSTANCE.getName()) ? lua : ftr.getFileTypeByExtension("txt");
     }
 
 
@@ -36,10 +39,11 @@ public class FactorioDebuggerEditorsProvider extends XDebuggerEditorsProvider {
                                             @NotNull String text,
                                             @Nullable XSourcePosition sourcePosition,
                                             @NotNull EvaluationMode mode) {
+        FileType ft = getFileType();
         text = text.trim();
         PsiPlainTextFile fragment = new PsiPlainTextFileImpl(
             PsiManagerEx.getInstanceEx(project).getFileManager().createFileViewProvider(
-                new LightVirtualFile("factorioFragment.lua", FileTypeRegistry.getInstance().getFileTypeByExtension("Lua"), text),
+                    new LightVirtualFile("factorioFragment."+ft.getDefaultExtension(), ft, text),
                 true
         ));
         return Objects.requireNonNull(PsiDocumentManager.getInstance(project).getDocument(fragment));
