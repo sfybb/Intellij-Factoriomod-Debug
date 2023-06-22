@@ -32,6 +32,7 @@ import com.intellij.xdebugger.frame.XSuspendContext
 import com.intellij.xdebugger.impl.XDebugSessionImpl
 import com.intellij.xdebugger.impl.breakpoints.XBreakpointUtil
 import com.intellij.xdebugger.stepping.XSmartStepIntoHandler
+import com.intellij.xdebugger.ui.XDebugTabLayouter
 import factorio.debugger.DAP.messages.DAPEventNames
 import factorio.debugger.DAP.messages.events.*
 import factorio.debugger.DAP.messages.events.DAPOutputEvent.OutputCategory
@@ -139,7 +140,6 @@ class FactorioDebugProcess(
     }
 
     private fun initialize(capabilities: DAPCapabilities, receiveSequence: Int) {
-
         logger.info("Connected debug adapter capabilities: ${
             capabilities.capabilities.joinToString(
                 prefix = "[",
@@ -174,6 +174,17 @@ class FactorioDebugProcess(
 
     override fun registerAdditionalActions(leftToolbar: DefaultActionGroup, topToolbar: DefaultActionGroup, settings: DefaultActionGroup) {
         leftToolbar.addAction(FactorioExceptionBreakpointAction(), Constraints(Anchor.AFTER, "XDebugger.MuteBreakpoints"))
+    }
+
+    override fun createTabLayouter(): XDebugTabLayouter {
+        /**
+         * Script tree tab
+         * [com.intellij.javascript.debugger.scripts.SourcesRunnerContentProvider]
+         *
+         *
+         */
+
+        return super.createTabLayouter()
     }
 
     private fun debugeeOutput(@Async.Execute dapEvent: DAPEvent) {
