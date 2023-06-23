@@ -186,7 +186,7 @@ class FactorioMod(private val myId: String, private val myName: String, private 
             val path: Path
             val modRootFile: VirtualFile?
             if (pathString != null) {
-                path = Path.of(URI.create(pathString).path)
+                path = Path.of(URI.create(pathString))
                 modRootFile = LocalFileSystem.getInstance().findFileByPath(path.toString())
             }  else {
                 path = Path.of(factorioEnv.modFolder, module.id + "_" + module.version + ".zip")
