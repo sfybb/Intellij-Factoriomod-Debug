@@ -108,7 +108,7 @@ public class FactorioRunProfileState extends CommandLineState {
 
                     for (final FactorioDebugProcess debugProcess : debugProcesses) {
                         if(debugProcess.getProcessHandler().equals(this)) {
-                            return debugProcess.stopAsync().getState() != Promise.State.REJECTED;
+                            return debugProcess.stopGracefully().getState() != Promise.State.REJECTED;
                         }
                     }
                     return false;

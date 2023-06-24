@@ -92,7 +92,7 @@ class FactorioDebugProcess(
                 override fun startNotified(event: ProcessEvent) {}
                 override fun onTextAvailable(event: ProcessEvent, outputType: Key<*>) {}
                 override fun processTerminated(event: ProcessEvent) {
-                    if (!myDebugger.wasTerminationRequested() && event.exitCode != 0) {
+                    if (!myDebugger.wasTerminationRequested() /*&& event.exitCode != 0*/) {
                         val errorMessage = myDebugger.lastReceivedMessage
                         myDebugeeConsole.print(
                             "Last message from FMTK:\n$errorMessage",
@@ -343,12 +343,24 @@ class FactorioDebugProcess(
         } else null
     }
 
-    override fun stopAsync(): Promise<Any> {
-        if (!hasCapability(DAPCapabilitiesEnum.TerminateRequest)) {
+    fun stopGracefully(): Promise<Any> {
+        if (!myDebugger.setTerminating() || !hasCapability(DAPCapabilitiesEnum.TerminateRequest)) {
             myDebugger.setTerminating()
             return rejectedPromise()
         }
-        return myDebugger.stop().then { r: DAPTerminateResponse -> r }
+        return stopAsync()
+    }
+
+    override fun stopAsync(): Promise<Any> {
+        if (!myDebugger.setTerminating() || !hasCapability(DAPCapabilitiesEnum.TerminateRequest)) {
+            return resolvedPromise()
+        }
+
+        val result = AsyncPromise<Any>()
+        this.session.stop()
+        myDebugger.stop().onSuccess { result.setResult(it) }.onError{ result.setResult(null) }
+
+        return result
     }
 
     override fun startPausing() {
@@ -485,10 +497,10 @@ class FactorioDebugProcess(
         if (res.state == Promise.State.REJECTED && !hasCapability(DAPCapabilitiesEnum.SetVariable)) {
             return rejectedPromise("Operation not supported")
         }
-        return if (myParent == null) {
-            rejectedPromise("This variable cant be changed because it has no parent!")
-        } else myDebugger.setValue(myParent.referenceId, myVariableName, expression)
-            .then { setValRes: DAPSetVariableResponse? -> setValRes?.body?.toVariable() }
+
+        return myParent?.let { myDebugger.setValue(it.referenceId, myVariableName, expression)
+            .then { setValRes: DAPSetVariableResponse? -> setValRes?.body?.toVariable() } } ?:
+        rejectedPromise("This variable cant be changed because it has no parent!")
     }
 
     private fun setExpression(
@@ -507,9 +519,7 @@ class FactorioDebugProcess(
 
     private val currentFrame: FactorioStackFrame?
         get() {
-            val ctx = this.session.suspendContext
-            val stack = ctx?.activeExecutionStack
-            val frame = stack?.topFrame
+            val frame = this.session.suspendContext?.activeExecutionStack?.topFrame
             return if (frame is FactorioStackFrame) frame else null
         }
 }

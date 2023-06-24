@@ -373,8 +373,8 @@ public class FactorioDebugger {
         return this.myDAPSocket.whenPreviousEventsProcessed(receive_sequence);
     }
 
-    public void setTerminating() {
-        this.myDAPSocket.setTerminating();
+    public boolean setTerminating() {
+        return this.myDAPSocket.setTerminating();
     }
 
     protected static class BreakpointsInFile {

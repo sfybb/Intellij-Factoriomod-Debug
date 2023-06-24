@@ -30,6 +30,7 @@ import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.function.Consumer
 
 class DAPSocket(outputStream: OutputStream?) : ProcessListener {
@@ -44,10 +45,11 @@ class DAPSocket(outputStream: OutputStream?) : ProcessListener {
     private val messageBodyBuilder: StringBuilder? = null
     private val lastMessages: CircularFifoBuffer
     private var myCancelRequestEnabled = false
-    private var requestedTermination = false
+    private var requestedTermination: AtomicBoolean
     private val myActiveEvents: MutableMap<Int, AsyncPromise<Boolean>>
 
     init {
+        requestedTermination = AtomicBoolean(false)
         myActiveEvents = HashMap()
         myObjectMapper = jacksonObjectMapper()
         myObjectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -110,7 +112,9 @@ class DAPSocket(outputStream: OutputStream?) : ProcessListener {
         request: DAPRequest<D>,
         @Async.Schedule sequence: Int
     ): Boolean {
-        requestedTermination = requestedTermination or (request is DAPTerminateRequest)
+        if (request is DAPTerminateRequest) {
+            setTerminating()
+        }
         printMessageDebug(request)
         try {
             request.sequence = sequence
@@ -135,7 +139,7 @@ class DAPSocket(outputStream: OutputStream?) : ProcessListener {
 
             //logger.info(getPrettyPrinter().writeValueAsString(request));
         } catch (e: IOException) {
-            if (requestedTermination) {
+            if (wasTerminationRequested()) {
                 // ignore this
             } else {
                 logger.warn("Failed to send DAP request '$request'", e)
@@ -246,7 +250,7 @@ class DAPSocket(outputStream: OutputStream?) : ProcessListener {
     }
 
     fun wasTerminationRequested(): Boolean {
-        return requestedTermination
+        return requestedTermination.get()
     }
 
     val lastReceivedMessage: String
@@ -258,7 +262,7 @@ class DAPSocket(outputStream: OutputStream?) : ProcessListener {
             return if (it.hasNext()) it.next().toString() else ""
         }
 
-    fun setTerminating() {
-        requestedTermination = true
+    fun setTerminating(): Boolean {
+        return requestedTermination.compareAndSet(false, true)
     }
 }
